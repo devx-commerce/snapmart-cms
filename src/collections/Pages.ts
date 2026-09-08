@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { anyone, authenticated, authenticatedOrPublished } from '../access'
-import { contentBlockSlugs } from '../blocks'
+import { layoutBlockSlugs } from '../blocks'
 
 /**
  * A general editorial content type -- the SoW's "custom pages" and Module 13 informational
@@ -43,7 +43,7 @@ export const Pages: CollectionConfig = {
       label: 'Page layout',
       // v3 API: reference shared blocks by slug; `blocks` must be present and empty.
       // v4 removes `blockReferences` and takes these slugs in `blocks` directly.
-      blockReferences: [...contentBlockSlugs],
+      blockReferences: [...layoutBlockSlugs],
       blocks: [],
     },
   ],

@@ -1,0 +1,12 @@
+
+--- BEFORE — product 3 has diverged, the other two still track the source ---
+  pages/about-landers              live-linked  "Members save more — every single trip"
+  product/prod_01JCOLDBREW1L       local copy   "Members save more — every single trip"
+  product/prod_01JOLIVEOIL500      live-linked  "Members save more — every single trip"
+
+>>> edited reusable-content/1 again
+
+--- AFTER — two followed, the diverged one held its own copy ---
+  pages/about-landers              live-linked  "THIRD EDIT — only live-linked consumers move"
+  product/prod_01JCOLDBREW1L       local copy   "Members save more — every single trip"
+  product/prod_01JOLIVEOIL500      live-linked  "THIRD EDIT — only live-linked consumers move"

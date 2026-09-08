@@ -6,10 +6,13 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
 import { contentBlocks } from './blocks'
+import { ReusableContentBlock } from './blocks/ReusableContent/config'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { ProductContent } from './collections/ProductContent'
+import { ReusableContent } from './collections/ReusableContent'
 import { Users } from './collections/Users'
+import { seedEndpoint } from './endpoints/seed'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -25,9 +28,9 @@ export default buildConfig({
   // Every shared content component is defined ONCE, here. Collections reference them by
   // slug rather than redeclaring them, which is the config-level half of "author once,
   // use everywhere". See src/blocks/index.ts for the v3-vs-v4 API note.
-  blocks: contentBlocks,
+  blocks: [...contentBlocks, ReusableContentBlock],
 
-  collections: [Pages, ProductContent, Media, Users],
+  collections: [Pages, ProductContent, ReusableContent, Media, Users],
 
   // No globals. This is a POC: header/footer/site-settings would demonstrate nothing that
   // the collections above do not already demonstrate.
@@ -38,6 +41,7 @@ export default buildConfig({
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URL || '' },
   }),
+  endpoints: [seedEndpoint],
   sharp,
   plugins: [],
 })

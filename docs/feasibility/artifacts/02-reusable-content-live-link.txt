@@ -1,0 +1,14 @@
+
+--- BEFORE — one source, three consumers, two collection types ---
+  pages/about-landers          updatedAt=2026-09-08T09:07:11.849Z  live | Not a member yet?
+  product/prod_01JCOLDBREW1L    updatedAt=2026-09-08T09:07:11.862Z  live | Not a member yet?
+  product/prod_01JOLIVEOIL500   updatedAt=2026-09-08T09:07:11.881Z  live | Not a member yet?
+
+>>> edited reusable-content/1 ONLY (no write to any consuming document)
+
+--- AFTER — all three consumers reflect the edit ---
+  pages/about-landers          updatedAt=2026-09-08T09:07:11.849Z  live | Members save more — every single trip
+  product/prod_01JCOLDBREW1L    updatedAt=2026-09-08T09:07:11.862Z  live | Members save more — every single trip
+  product/prod_01JOLIVEOIL500   updatedAt=2026-09-08T09:07:11.881Z  live | Members save more — every single trip
+
+RESULT: every consumer reflects the new copy; consumer updatedAt unchanged = true

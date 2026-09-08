@@ -70,10 +70,12 @@ export interface Config {
     richText: RichTextBlock;
     mediaBlock: MediaBlockType;
     cta: CtaBlock;
+    reusableContent: ReusableContentBlock;
   };
   collections: {
     pages: Page;
     'product-content': ProductContent;
+    'reusable-content': ReusableContent;
     media: Media;
     users: User;
     'payload-kv': PayloadKv;
@@ -85,6 +87,7 @@ export interface Config {
   collectionsSelect: {
     pages: PagesSelect<false> | PagesSelect<true>;
     'product-content': ProductContentSelect<false> | ProductContentSelect<true>;
+    'reusable-content': ReusableContentSelect<false> | ReusableContentSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -237,6 +240,35 @@ export interface CtaBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ReusableContentBlock".
+ */
+export interface ReusableContentBlock {
+  source: number | ReusableContent;
+  /**
+   * On: renders the source live, so edits there appear here. Off: takes a one-time copy you can edit independently.
+   */
+  useSourceValues?: boolean | null;
+  content?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock)[] | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'reusableContent';
+}
+/**
+ * Content authored once and referenced from documents in any collection.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reusable-content".
+ */
+export interface ReusableContent {
+  id: number;
+  title: string;
+  content: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock)[];
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
  */
 export interface Page {
@@ -246,7 +278,7 @@ export interface Page {
    * URL path segment, e.g. "about-us".
    */
   slug: string;
-  layout?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock)[] | null;
+  layout?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock | ReusableContentBlock)[] | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -272,7 +304,7 @@ export interface ProductContent {
   /**
    * Sections unique to this product. Sections shared across every product come from its template (Phase 3).
    */
-  productDetail?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock)[] | null;
+  productDetail?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock | ReusableContentBlock)[] | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -340,6 +372,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'product-content';
         value: number | ProductContent;
+      } | null)
+    | ({
+        relationTo: 'reusable-content';
+        value: number | ReusableContent;
       } | null)
     | ({
         relationTo: 'media';
@@ -413,6 +449,17 @@ export interface ProductContentSelect<T extends boolean = true> {
   shortDescription?: T;
   heroImage?: T;
   productDetail?: T | {};
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reusable-content_select".
+ */
+export interface ReusableContentSelect<T extends boolean = true> {
+  title?: T;
+  content?: T | {};
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

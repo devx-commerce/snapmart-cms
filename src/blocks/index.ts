@@ -63,7 +63,11 @@ export const Cta: Block = {
   ],
 }
 
-/** Everything registered at config root. */
+/**
+ * The base content components. `reusableContent` is deliberately NOT in this list: it is
+ * registered separately below, because the reusable-content collection's own `content`
+ * field takes these four and must not be able to nest reusable content inside itself.
+ */
 export const contentBlocks: Block[] = [Hero, RichText, MediaBlock, Cta]
 
 /**
@@ -79,3 +83,16 @@ const _slugCoverage: Record<(typeof contentBlocks)[number]['slug'], true> = Obje
   contentBlockSlugs.map((s) => [s, true]),
 ) as Record<(typeof contentBlocks)[number]['slug'], true>
 void _slugCoverage
+
+/**
+ * What a document's layout can contain: the four components PLUS a reusable-content
+ * placement. Registered at config root in payload.config.ts as
+ * `[...contentBlocks, ReusableContentBlock]`.
+ */
+export const layoutBlockSlugs = [
+  'hero',
+  'richText',
+  'mediaBlock',
+  'cta',
+  'reusableContent',
+] satisfies BlockSlug[]

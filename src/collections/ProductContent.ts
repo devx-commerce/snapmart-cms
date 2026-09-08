@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { authenticated, authenticatedOrPublished } from '../access'
-import { contentBlockSlugs } from '../blocks'
+import { layoutBlockSlugs } from '../blocks'
 import { rejectCommerceFields } from '../hooks/rejectCommerceFields'
 
 /**
@@ -73,7 +73,7 @@ export const ProductContent: CollectionConfig = {
           'Sections unique to this product. Sections shared across every product come from its template (Phase 3).',
       },
       // v3 API -- see note in src/blocks/index.ts. v4 merges these into `blocks`.
-      blockReferences: [...contentBlockSlugs],
+      blockReferences: [...layoutBlockSlugs],
       blocks: [],
     },
   ],

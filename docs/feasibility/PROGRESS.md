@@ -6,9 +6,9 @@ Updated at the end of every phase. Nothing is marked **Done** without its comman
 | Phase | Title | Status | Evidence |
 |---|---|---|---|
 | 0 | Repo init + Payload booting on Postgres | ✅ Done | `/api/access` → 200 · 9 tables in Postgres · admin user created through the panel |
-| 1 | Schema and content authoring | ⬜ Not started | — |
-| 2 | Reusable content across collection types | ⬜ Not started | — |
-| 3 | Page templates / layout inheritance | ⬜ Not started | — |
+| 1 | Schema and content authoring | ✅ Done | [01-schema.md](01-schema.md) · 9→29 tables · boundary write rejected 400 · both collections authored in the panel |
+| 2 | Reusable content across collection types | ✅ Done | [02-reusable-content.md](02-reusable-content.md) · 1 source → 3 consumers in 2 collection types, consumers never written · copy-on-write verified in the panel |
+| 3 | Page templates / layout inheritance | ⏳ In progress | — |
 | 4 | GraphQL, REST, and CDN-backed assets | ⬜ Not started | — |
 | 5 | Plugins, third-party integration, report | ⬜ Not started | — |
 
@@ -109,3 +109,88 @@ what Payload ships and tests against.
 - Payload's Postgres schema is created by push-on-boot in dev. Production needs
   `payload migrate` with committed migration files — untested here, and a real operational
   question for an EKS deployment where several pods boot at once (HPA min 1 / max 4).
+
+---
+
+## Phase 1 — Schema definition and content authoring
+
+**Status:** ✅ Done → full write-up in [01-schema.md](01-schema.md)
+
+### Built
+4 blocks (`hero`, `richText`, `mediaBlock`, `cta`) registered once at config root; two
+unlike collections (`pages`, `product-content`) referencing them by slug; `media` with
+imageSizes; `users` with the SoW's six admin roles. No globals.
+
+### Proof
+- Both collections' block pickers render the same four blocks from one registration
+  (admin UI).
+- `about-landers` (hero block) and `prod_01JCOLDBREW1L` (richText block) authored and
+  published; anonymous read returns published only.
+- Commerce boundary: `POST` carrying `price`/`stock`/`name` → **HTTP 400** with a message
+  naming the offending fields. Same request without them → 201.
+- `pnpm lint` exit 0 · `pnpm typecheck` exit 0.
+
+### Findings
+1. **`blockReferences` shares the config, not the storage.** 9 → 29 tables for 4 blocks ×
+   2 collections. Postgres gets one table per block type *per collection*, and drafts
+   double it. Projects to ~400–600 tables at the SoW's "21+ content types". Decide per
+   collection which blocks it accepts, and whether it needs drafts.
+2. `blockReferences` is typed against generated `BlockSlug` keys, so
+   `blocks.map(b => b.slug)` (→ `string[]`) does not compile. Slugs must be literals.
+3. **Drafts + autosave are cheap and the SoW never mentions them** — recommend in scope.
+4. Field named `marketingName`, never `name` — resolves the SoW-vs-glossary contradiction
+   in the schema rather than in a comment.
+5. Block-level validation surfaces in the panel with the exact field path.
+
+### Scaffold problems (will hit the production repo)
+- **The template's ESLint has never run**: missing `@eslint/eslintrc`, and adding it exposes
+  a `FlatCompat` × `eslint-config-next@16` circular-structure crash. Replaced with Biome
+  ported from `snapmart-frontend`. *This reverses the Phase 0 decision to keep ESLint —
+  that call was made before discovering the config was broken.*
+- The template's `tests/helpers/seedUser.ts` stops typechecking as soon as `users` gains a
+  required field, with a misleading "Property 'draft' is missing" error.
+
+### Open questions raised
+- Which blocks should each collection actually accept? (now a database-cost decision)
+- Drafts on every collection or only some?
+- Migrations: dev pushes on boot; production needs committed `payload migrate` files, and
+  EKS boots several pods at once (HPA min 1 / max 4). Untested.
+
+---
+
+## Phase 2 — Reusable content across collection types
+
+**Status:** ✅ Done → full write-up in [02-reusable-content.md](02-reusable-content.md)
+
+### Built
+`reusable-content` collection (author once) + a `reusableContent` block placeable in both
+`pages` and `product-content`. Two modes: **live link** (default — stores a relationship,
+resolves at read) and **copy-on-write** (a `ContentManager` client component replays the
+source's blocks into a local copy). Plus `src/seed/` and `POST /api/seed` so every later
+phase is reproducible from a clean database.
+
+### Proof
+- One source edited → **all three consumers** (1 page + 2 products) show the new copy, and
+  **every consumer's `updatedAt` is unchanged** — no write fanned out.
+- Unticking the checkbox in the admin panel populated the local copy with exactly the
+  source's two blocks in order; a later source edit moved the two live-linked consumers and
+  left the diverged one alone.
+- `pnpm lint` exit 0 · `pnpm typecheck` exit 0.
+
+### Findings
+1. **Nesting blocks does not multiply tables — corrects the Phase 1 projection.** Nested
+   block rows live in the same per-collection table, discriminated by a `_path` column
+   (`productDetail` vs `productDetail.1.content` in one table). Growth stays
+   `block types × collections × 2` at any nesting depth. 29 → 43 tables here, all of it
+   explained by one new collection and one new block type.
+2. Live-link needs no fan-out write, so there is no drift and no stale window — but a
+   consumer's `updatedAt` stops indicating when its rendered content last changed, which
+   matters for cache invalidation (Phase 5).
+3. Copy-on-write is one-way: re-ticking discards the local copy rather than merging.
+4. Custom `ui` fields fail **silently** if `generate:importmap` is not re-run. Belongs in CI.
+5. Reusable content deliberately cannot nest inside itself.
+
+### Open questions raised
+- No back-reference UI: editing one panel can change 40 live pages with no warning. A
+  `join` field would surface "used by" and is worth costing.
+- Untested: consumer published while its reusable-content source is still a draft.
