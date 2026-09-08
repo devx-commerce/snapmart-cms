@@ -93,8 +93,10 @@ resize anything.
 → [04-apis-and-cdn.md](04-apis-and-cdn.md)
 
 The SoW never mentions CloudFront, a media bucket, or any Payload asset pipeline — every S3
-reference in it belongs to the SAP/Mirakl price-and-stock ingestion. **This design is a
-proposal that has been run, not a transcription.**
+reference in it belongs to the SAP/Mirakl price-and-stock ingestion. The design is ours, and
+**it now runs on real AWS**: private bucket in ap-south-1, CloudFront with an Origin Access
+Control, verified Miss → Hit → Hit at the edge with correct Cache-Control on the original and
+all three derivatives. See [09-s3-without-cloudfront.md](09-s3-without-cloudfront.md).
 
 ### 5. Common content reused across collection types
 

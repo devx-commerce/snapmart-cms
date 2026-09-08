@@ -1,4 +1,90 @@
-# S3 without CloudFront — what changes
+# Media on real AWS — S3, CloudFront, and what went wrong getting there
+
+> **Status: live and verified.** CloudFront was obtained after all, so the bucket stays
+> private behind an Origin Access Control and `s3-public-read.sh` is **not** needed. The
+> public-read path below is kept for reference, in case a second environment has no CDN.
+
+## Verified end to end
+
+Uploading through Payload's own API, against the real bucket:
+
+```
+url: https://d2ys2914nb86n5.cloudfront.net/aws-test.png
+
+S3 bucket contents          aws-test.png 11625 · -300x300 1048 · -768x512 2542 · -1920x960 8013
+
+fetched with no credentials
+  aws-test.png            200  cache-control: public, max-age=86400
+  aws-test-300x300.png    200  cache-control: public, max-age=31536000, immutable
+  aws-test-768x512.png    200  cache-control: public, max-age=31536000, immutable
+  aws-test-1920x960.png   200  cache-control: public, max-age=31536000, immutable
+  via: 1.1 …cloudfront.net (CloudFront)
+
+edge caching, three sequential GETs of one object
+  GET 1  Miss from cloudfront  age 0  edge 5f48abc1
+  GET 2  Hit  from cloudfront  age 0  edge 5f48abc1
+  GET 3  Hit  from cloudfront  age 1  edge 5f48abc1
+```
+
+Sharp's three derivatives are uploaded alongside the original, all four serve from the edge,
+and the Cache-Control hook works against real S3. Payload never serves a byte of media.
+
+## Two provisioning bugs worth keeping
+
+Both cost real time and both produce misleading errors.
+
+### 1. The IAM policy pointed at a stale bucket, and the error blamed the attachment
+
+`provision-s3.sh` checked *whether* the policy existed and stopped there. An earlier run had
+created `SnapmartCmsMediaPoc` against a different bucket name; the re-run skipped it. The
+symptom:
+
+```
+sts get-caller-identity  →  works, user snapmart-cms-poc
+every S3 call            →  "not authorized to perform: s3:PutObject … because no
+                             identity-based policy allows the s3:PutObject action"
+```
+
+That message reads as *"no policy is attached"*, so the natural move is to check the
+attachment — which is fine. The policy was attached; it granted access to a bucket that no
+longer existed.
+
+What actually located it was probing three bucket names and reading the *difference* in the
+errors: two returned `NoSuchBucket`, the real one returned `AccessDenied`. **A bucket that
+exists but is not permitted fails differently from one that does not exist** — worth
+remembering, because the AWS console does not surface that distinction.
+
+Fixed: the script now reads the policy's default version and, when the ARNs do not match the
+current bucket, creates a new version and sets it as default (pruning old ones — IAM caps at
+five).
+
+### 2. `.env` had a duplicate `S3_BUCKET`, and the wrong one won
+
+`.env` accumulated two `S3_BUCKET` lines — the real one from the provisioning script, and a
+placeholder from `.env.aws.example`. Last-one-wins, so the placeholder was active. A
+duplicate key produces no warning from anything.
+
+Also still present from the MinIO era: `S3_ENDPOINT=http://localhost:9000` and
+`S3_FORCE_PATH_STYLE=true`. The first sends every upload to a container that is not the
+target; the second breaks TLS certificate matching on real S3 in several regions.
+
+### 3. The script reported the wrong region
+
+The summary printed `$REGION` (the CLI default, `ap-southeast-1`) for a bucket actually in
+`ap-south-1`. Copying that into `S3_REGION` would sign requests against the wrong regional
+endpoint. It now reports `get-bucket-location`.
+
+## A note on region
+
+The bucket is in **ap-south-1 (Mumbai)**; the script's default was ap-southeast-1
+(Singapore), which is nearer to landers.ph. With CloudFront in front this matters much less
+than it would otherwise — reads come from the edge, and only cache misses reach the origin.
+Worth revisiting for a production bucket, where upload latency from the admin panel and
+origin-fetch latency both favour Singapore.
+
+---
+
+# Appendix — S3 without CloudFront
 
 CloudFront is not available, so S3 must serve the public read itself. That works, and the
 same code path handles it — but three things change, and one of them is a real gap in

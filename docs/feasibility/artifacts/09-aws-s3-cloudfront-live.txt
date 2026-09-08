@@ -1,0 +1,36 @@
+=== 1. objects actually in the S3 bucket ===
+------------------------------------
+|           ListObjectsV2          |
++------------------------+---------+
+|           Key          |  Size   |
++------------------------+---------+
+|  aws-test-1920x960.png |  8013   |
+|  aws-test-300x300.png  |  1048   |
+|  aws-test-768x512.png  |  2542   |
+|  aws-test.png          |  11625  |
++------------------------+---------+
+
+=== 2. every URL Payload handed out, fetched with no credentials ===
+  aws-test.png                 HTTP 200
+      cache-control: public, max-age=86400
+      via:           1.1 dd6c1a278efb828ef1b392c94dad2808.cloudfront.net (CloudFront)
+      x-cache:       Miss from cloudfront
+  aws-test-300x300.png         HTTP 200
+      cache-control: public, max-age=31536000, immutable
+      via:           1.1 b2eb657996ec271973f6d03fdc8ee958.cloudfront.net (CloudFront)
+      x-cache:       Miss from cloudfront
+  aws-test-768x512.png         HTTP 200
+      cache-control: public, max-age=31536000, immutable
+      via:           1.1 f75007f93d7a2428f5ae5fe0d25913a0.cloudfront.net (CloudFront)
+      x-cache:       Miss from cloudfront
+  aws-test-1920x960.png        HTTP 200
+      cache-control: public, max-age=31536000, immutable
+      via:           1.1 b9239473c5a6c33ed54d1b78216f812a.cloudfront.net (CloudFront)
+      x-cache:       Miss from cloudfront
+=== 3. second fetch — is CloudFront caching it? ===
+  aws-test-300x300.png | x-cache: Miss from cloudfront | age: -
+three sequential GETs of aws-test-300x300.png 
+
+  GET 1  x-cache: Miss from cloudfront   age: 0    edge: 5f48abc1
+  GET 2  x-cache: Hit from cloudfront    age: 0    edge: 5f48abc1
+  GET 3  x-cache: Hit from cloudfront    age: 1    edge: 5f48abc1

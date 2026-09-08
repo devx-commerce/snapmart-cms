@@ -193,12 +193,19 @@ PY
   info "key id ends ...${KEY_ID: -4}"
 fi
 
+
+# The bucket's OWN region, which can differ from the CLI default. S3_REGION must match
+# the bucket or the SDK signs requests against the wrong regional endpoint. Reporting
+# $REGION here was misleading: it printed ap-southeast-1 for a bucket in ap-south-1.
+BUCKET_REGION=$(aws s3api get-bucket-location --bucket "$BUCKET" --query 'LocationConstraint' --output text 2>/dev/null || echo "")
+[ -z "$BUCKET_REGION" ] || [ "$BUCKET_REGION" = "None" ] && BUCKET_REGION="us-east-1"
+
 cat <<EOF
 
 $(printf '\033[1mDone. Bucket and IAM are ready.\033[0m')
 
   bucket   $BUCKET
-  region   $REGION
+  region   $BUCKET_REGION   <-- put THIS in S3_REGION
   user     $USER_NAME
 
 $(printf '\033[1mNext — pick one:\033[0m')
@@ -208,7 +215,7 @@ $(printf '\033[1mNext — pick one:\033[0m')
      Then set:   CDN_BASE_URL=https://<distribution-id>.cloudfront.net
 
   B. Skip the CDN for a first test
-     Set:        CDN_BASE_URL=https://${BUCKET}.s3.${REGION}.amazonaws.com
+     Set:        CDN_BASE_URL=https://${BUCKET}.s3.${BUCKET_REGION}.amazonaws.com
      and turn Block Public Access off plus add a public-read bucket policy.
      Quicker, but every object becomes world-readable straight from S3.
 

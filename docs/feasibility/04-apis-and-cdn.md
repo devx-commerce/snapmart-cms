@@ -152,7 +152,14 @@ enumerable from the public endpoint either.
 
 The SoW never mentions CloudFront, an S3 bucket, or any media pipeline for Payload — every
 S3 reference in it belongs to the SAP/Mirakl price-and-stock ingestion, which is unrelated.
-**This section is a proposal that has been run, not a transcription.**
+This design is ours.
+
+**It is no longer a proposal: it now runs against real AWS.** Bucket
+`snapmart-cms-media-poc-735902244362` (ap-south-1), private, fronted by CloudFront
+distribution `d2ys2914nb86n5.cloudfront.net` with an Origin Access Control. See
+[09-s3-without-cloudfront.md](09-s3-without-cloudfront.md) for provisioning and
+[`artifacts/09-aws-s3-cloudfront-live.txt`](artifacts/09-aws-s3-cloudfront-live.txt) for the
+live output.
 
 `src/plugins/storage.ts` configures `@payloadcms/storage-s3` against MinIO. Two settings do
 the work:
