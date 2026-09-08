@@ -1,0 +1,40 @@
+
+=== BEFORE — two products, one template ===
+
+  prod_01JCOLDBREW1L   (updatedAt 2026-09-08T09:12:55.630Z)
+    stored productDetail : 1 block(s) — the product's own
+    resolvedDetail       : 4 block(s) — template + own
+      1. richText   "Cold-pressed for 18 hours, then flash-chilled.…"
+      2. richText   "Shipping & Delivery — same-day delivery within Metro…"
+      3. reusable   -> "Landers Membership Benefits" (live)
+      4. richText   "Returns — unopened items can be returned to any Land…"
+
+  prod_01JOLIVEOIL500   (updatedAt 2026-09-08T09:12:55.651Z)
+    stored productDetail : 1 block(s) — the product's own
+    resolvedDetail       : 4 block(s) — template + own
+      1. richText   "Harvested and pressed within six hours to keep the p…"
+      2. richText   "Shipping & Delivery — same-day delivery within Metro…"
+      3. reusable   -> "Landers Membership Benefits" (live)
+      4. richText   "Returns — unopened items can be returned to any Land…"
+
+>>> edited page-templates/1 ONLY — no write to any product
+
+=== AFTER — both products carry the new returns policy ===
+
+  prod_01JCOLDBREW1L   (updatedAt 2026-09-08T09:12:55.630Z)
+    stored productDetail : 1 block(s) — the product's own
+    resolvedDetail       : 4 block(s) — template + own
+      1. richText   "Cold-pressed for 18 hours, then flash-chilled.…"
+      2. richText   "Shipping & Delivery — same-day delivery within Metro…"
+      3. reusable   -> "Landers Membership Benefits" (live)
+      4. richText   "Returns — extended to 60 days for members during the…"
+
+  prod_01JOLIVEOIL500   (updatedAt 2026-09-08T09:12:55.651Z)
+    stored productDetail : 1 block(s) — the product's own
+    resolvedDetail       : 4 block(s) — template + own
+      1. richText   "Harvested and pressed within six hours to keep the p…"
+      2. richText   "Shipping & Delivery — same-day delivery within Metro…"
+      3. reusable   -> "Landers Membership Benefits" (live)
+      4. richText   "Returns — extended to 60 days for members during the…"
+
+RESULT: both products changed; product updatedAt unchanged = true

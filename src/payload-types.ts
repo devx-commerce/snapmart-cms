@@ -71,11 +71,13 @@ export interface Config {
     mediaBlock: MediaBlockType;
     cta: CtaBlock;
     reusableContent: ReusableContentBlock;
+    documentSlot: DocumentSlotBlock;
   };
   collections: {
     pages: Page;
     'product-content': ProductContent;
     'reusable-content': ReusableContent;
+    'page-templates': PageTemplate;
     media: Media;
     users: User;
     'payload-kv': PayloadKv;
@@ -88,6 +90,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     'product-content': ProductContentSelect<false> | ProductContentSelect<true>;
     'reusable-content': ReusableContentSelect<false> | ReusableContentSelect<true>;
+    'page-templates': PageTemplatesSelect<false> | PageTemplatesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -269,6 +272,16 @@ export interface ReusableContent {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "DocumentSlotBlock".
+ */
+export interface DocumentSlotBlock {
+  slot: 'main' | 'extra';
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'documentSlot';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
  */
 export interface Page {
@@ -278,7 +291,30 @@ export interface Page {
    * URL path segment, e.g. "about-us".
    */
   slug: string;
+  /**
+   * Copied into the layout below when the page is first created.
+   */
+  contentTemplate?: (number | null) | PageTemplate;
   layout?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock | ReusableContentBlock)[] | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Layouts shared by a whole kind of page. Add a Document Slot block where each page’s own content should appear.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-templates".
+ */
+export interface PageTemplate {
+  id: number;
+  name: string;
+  appliesTo: 'pages' | 'product-content';
+  /**
+   * Resolve at read: editing this template changes every document using it, and they cannot edit the shared sections. Copy on create: new documents get these blocks as a starting point and own them from then on.
+   */
+  strategy: 'resolveAtRead' | 'copyOnCreate';
+  layout: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock | ReusableContentBlock | DocumentSlotBlock)[];
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -301,6 +337,14 @@ export interface ProductContent {
   marketingName: string;
   shortDescription?: string | null;
   heroImage?: (number | null) | Media;
+  /**
+   * The layout shared by this kind of product page. Its sections are resolved on read — edit the template to change every product using it.
+   */
+  contentTemplate?: (number | null) | PageTemplate;
+  /**
+   * Fills the template's 'Extra' slot. For the one product that needs something the shared layout does not provide.
+   */
+  templateOverrides?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock | ReusableContentBlock)[] | null;
   /**
    * Sections unique to this product. Sections shared across every product come from its template (Phase 3).
    */
@@ -378,6 +422,10 @@ export interface PayloadLockedDocument {
         value: number | ReusableContent;
       } | null)
     | ({
+        relationTo: 'page-templates';
+        value: number | PageTemplate;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -434,6 +482,7 @@ export interface PayloadMigration {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  contentTemplate?: T;
   layout?: T | {};
   updatedAt?: T;
   createdAt?: T;
@@ -448,6 +497,8 @@ export interface ProductContentSelect<T extends boolean = true> {
   marketingName?: T;
   shortDescription?: T;
   heroImage?: T;
+  contentTemplate?: T;
+  templateOverrides?: T | {};
   productDetail?: T | {};
   updatedAt?: T;
   createdAt?: T;
@@ -460,6 +511,19 @@ export interface ProductContentSelect<T extends boolean = true> {
 export interface ReusableContentSelect<T extends boolean = true> {
   title?: T;
   content?: T | {};
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-templates_select".
+ */
+export interface PageTemplatesSelect<T extends boolean = true> {
+  name?: T;
+  appliesTo?: T;
+  strategy?: T;
+  layout?: T | {};
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

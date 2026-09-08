@@ -1,0 +1,22 @@
+=== (a) EXTRA SLOT — one product adds a section, the other does not ===
+
+  prod_01JCOLDBREW1L
+    own blocks     : 1
+    extra sections : 0
+    rendered       : richText → richText → reusableContent → richText
+
+  prod_01JOLIVEOIL500
+    own blocks     : 1
+    extra sections : 1
+    rendered       : richText → richText → reusableContent → richText → cta
+
+=== (b) COPY-ON-CREATE — the template seeds a new page, then lets go ===
+
+  template "Campaign Landing (starting point)" layout : hero → documentSlot → cta
+  new page STORED layout           : hero → cta
+  ^ the template blocks were WRITTEN INTO the page. It owns them now.
+
+  page hero before template edit : "Campaign headline goes here"
+  page hero after  template edit : "Campaign headline goes here"
+
+RESULT: copy-on-create page ignored the template edit = true

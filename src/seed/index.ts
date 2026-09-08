@@ -13,13 +13,16 @@ import { paragraph } from './lexical'
  *     demonstrate (Phase 3 extends this).
  */
 export const seed = async (payload: Payload): Promise<Record<string, unknown>> => {
-  const wipe = async (collection: 'pages' | 'product-content' | 'reusable-content') => {
+  const wipe = async (
+    collection: 'pages' | 'product-content' | 'reusable-content' | 'page-templates',
+  ) => {
     await payload.delete({ collection, where: { id: { exists: true } } })
   }
 
   await wipe('pages')
   await wipe('product-content')
   await wipe('reusable-content')
+  await wipe('page-templates')
 
   // ---- the content authored once ----
   const membership = await payload.create({
@@ -39,6 +42,68 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
           body: 'Join in-store or online and start saving on your first basket.',
           label: 'Become a member',
           href: '/membership',
+        },
+      ],
+      _status: 'published',
+    },
+  })
+
+  // ---- the PDP layout, authored once for every product ----
+  //
+  // Note what this template contains: shared sections, a reusable-content reference (so
+  // Phase 2's mechanism composes inside Phase 3's), and two slots saying where each
+  // product's own content goes.
+  const pdpTemplate = await payload.create({
+    collection: 'page-templates',
+    data: {
+      name: 'Standard PDP',
+      appliesTo: 'product-content',
+      strategy: 'resolveAtRead',
+      layout: [
+        // 1. the product's own detail sections
+        { blockType: 'documentSlot', slot: 'main' },
+        // 2..4 the sections every product shares
+        {
+          blockType: 'richText',
+          content: paragraph(
+            'Shipping & Delivery — same-day delivery within Metro Manila for orders placed before 2pm. Standard delivery 2-3 business days nationwide.',
+          ),
+        },
+        { blockType: 'reusableContent', source: membership.id, useSourceValues: true },
+        {
+          blockType: 'richText',
+          content: paragraph(
+            'Returns — unopened items can be returned to any Landers warehouse within 30 days with your member card.',
+          ),
+        },
+        // 5. room for the one product that needs something extra
+        { blockType: 'documentSlot', slot: 'extra' },
+      ],
+      _status: 'published',
+    },
+  })
+
+  // ---- a copy-on-create template, for contrast (Strategy A) ----
+  const campaignTemplate = await payload.create({
+    collection: 'page-templates',
+    data: {
+      name: 'Campaign Landing (starting point)',
+      appliesTo: 'pages',
+      strategy: 'copyOnCreate',
+      layout: [
+        {
+          blockType: 'hero',
+          heading: 'Campaign headline goes here',
+          subheading: 'Replace this — it is only a starting point.',
+          alignment: 'center',
+        },
+        { blockType: 'documentSlot', slot: 'main' },
+        {
+          blockType: 'cta',
+          heading: 'Shop the campaign',
+          body: 'Edit or delete this block; it belongs to the page now.',
+          label: 'Shop now',
+          href: '/shop',
         },
       ],
       _status: 'published',
@@ -89,10 +154,10 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
           medusaProductId: p.medusaProductId,
           marketingName: p.marketingName,
           shortDescription: p.shortDescription,
-          productDetail: [
-            { blockType: 'richText', content: paragraph(p.detail) },
-            { blockType: 'reusableContent', source: membership.id, useSourceValues: true },
-          ],
+          // Both products point at the SAME template. Neither stores the shared
+          // sections -- those are spliced in on read.
+          contentTemplate: pdpTemplate.id,
+          productDetail: [{ blockType: 'richText', content: paragraph(p.detail) }],
           _status: 'published',
         },
       }),
@@ -102,6 +167,10 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
   return {
     reusableContent: { id: membership.id, title: membership.title },
     page: { id: page.id, slug: page.slug },
+    templates: {
+      pdp: { id: pdpTemplate.id, strategy: 'resolveAtRead' },
+      campaign: { id: campaignTemplate.id, strategy: 'copyOnCreate' },
+    },
     products: products.map((p) => ({ id: p.id, medusaProductId: p.medusaProductId })),
   }
 }

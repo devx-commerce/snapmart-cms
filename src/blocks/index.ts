@@ -64,6 +64,34 @@ export const Cta: Block = {
 }
 
 /**
+ * A slot marker. It renders nothing itself -- it tells a page template WHERE a document's
+ * own content belongs, so the common sections can sit both above and below it.
+ *
+ *   main  -> the document's own content field (a product's detail sections)
+ *   extra -> the document's `templateOverrides`, for the one product that needs something
+ *            the template does not provide
+ *
+ * Only ever placed inside a page-template's layout, never in a document.
+ */
+export const DocumentSlot: Block = {
+  slug: 'documentSlot',
+  interfaceName: 'DocumentSlotBlock',
+  labels: { singular: 'Document Slot', plural: 'Document Slots' },
+  fields: [
+    {
+      name: 'slot',
+      type: 'select',
+      required: true,
+      defaultValue: 'main',
+      options: [
+        { label: "Main — the document's own content", value: 'main' },
+        { label: 'Extra — per-document additions', value: 'extra' },
+      ],
+    },
+  ],
+}
+
+/**
  * The base content components. `reusableContent` is deliberately NOT in this list: it is
  * registered separately below, because the reusable-content collection's own `content`
  * field takes these four and must not be able to nest reusable content inside itself.
@@ -96,3 +124,9 @@ export const layoutBlockSlugs = [
   'cta',
   'reusableContent',
 ] satisfies BlockSlug[]
+
+/**
+ * What a page template's layout can contain: everything a document can, plus the slot
+ * marker that says where the document's own content goes.
+ */
+export const templateBlockSlugs = [...layoutBlockSlugs, 'documentSlot'] satisfies BlockSlug[]

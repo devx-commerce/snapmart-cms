@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { authenticated, authenticatedOrPublished } from '../access'
 import { layoutBlockSlugs } from '../blocks'
+import { copyTemplateOnCreate, resolveTemplateAtRead } from '../hooks/applyTemplate'
 import { rejectCommerceFields } from '../hooks/rejectCommerceFields'
 
 /**
@@ -33,7 +34,11 @@ export const ProductContent: CollectionConfig = {
     delete: authenticated,
   },
   hooks: {
-    beforeValidate: [rejectCommerceFields],
+    beforeValidate: [rejectCommerceFields, copyTemplateOnCreate('productDetail')],
+    // Adds a computed `resolvedDetail` -- the template's shared sections with this
+    // product's own blocks spliced into the slots. `productDetail` is never rewritten,
+    // so a template edit changes every product without touching a single document.
+    afterRead: [resolveTemplateAtRead('productDetail', 'resolvedDetail')],
   },
   versions: {
     drafts: { autosave: { interval: 375 } },
@@ -64,6 +69,30 @@ export const ProductContent: CollectionConfig = {
     },
     { name: 'shortDescription', type: 'textarea' },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
+    {
+      name: 'contentTemplate',
+      type: 'relationship',
+      relationTo: 'page-templates',
+      label: 'Page template',
+      filterOptions: () => ({ appliesTo: { equals: 'product-content' } }),
+      admin: {
+        position: 'sidebar',
+        description:
+          'The layout shared by this kind of product page. Its sections are resolved on read — edit the template to change every product using it.',
+      },
+    },
+    {
+      name: 'templateOverrides',
+      type: 'blocks',
+      label: 'Extra sections',
+      admin: {
+        description:
+          "Fills the template's 'Extra' slot. For the one product that needs something the shared layout does not provide.",
+        condition: (data) => Boolean(data?.contentTemplate),
+      },
+      blockReferences: [...layoutBlockSlugs],
+      blocks: [],
+    },
     {
       name: 'productDetail',
       type: 'blocks',

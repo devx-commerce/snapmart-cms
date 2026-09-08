@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { anyone, authenticated, authenticatedOrPublished } from '../access'
 import { layoutBlockSlugs } from '../blocks'
+import { copyTemplateOnCreate } from '../hooks/applyTemplate'
 
 /**
  * A general editorial content type -- the SoW's "custom pages" and Module 13 informational
@@ -23,6 +24,11 @@ export const Pages: CollectionConfig = {
     update: authenticated,
     delete: authenticated,
   },
+  hooks: {
+    // Strategy A: a copy-on-create template seeds a new page's layout once, then gets out
+    // of the way. Editors can change anything; later template edits do not reach this page.
+    beforeValidate: [copyTemplateOnCreate('layout')],
+  },
   versions: {
     drafts: { autosave: { interval: 375 } },
     maxPerDoc: 20,
@@ -36,6 +42,17 @@ export const Pages: CollectionConfig = {
       unique: true,
       index: true,
       admin: { position: 'sidebar', description: 'URL path segment, e.g. "about-us".' },
+    },
+    {
+      name: 'contentTemplate',
+      type: 'relationship',
+      relationTo: 'page-templates',
+      label: 'Start from template',
+      filterOptions: () => ({ appliesTo: { equals: 'pages' } }),
+      admin: {
+        position: 'sidebar',
+        description: 'Copied into the layout below when the page is first created.',
+      },
     },
     {
       name: 'layout',
