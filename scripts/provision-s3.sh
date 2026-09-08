@@ -75,13 +75,10 @@ ok "default encryption on"
 
 say "2. IAM policy: $POLICY_NAME"
 POLICY_ARN="arn:aws:iam::${ACCOUNT}:policy/${POLICY_NAME}"
-if aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
-  ok "already exists"
-else
-  # Note the two different ARN shapes: object actions need /*, bucket actions do not.
-  aws iam create-policy --policy-name "$POLICY_NAME" --tags "$TAGS_IAM" \
-    --description "Payload CMS media access for the Snapmart POC bucket" \
-    --policy-document "$(cat <<JSON
+
+# The policy document, built once so the create and update paths cannot drift.
+# Note the two different ARN shapes: object actions need /*, bucket actions do not.
+POLICY_DOC=$(cat <<JSON
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -100,7 +97,39 @@ else
   ]
 }
 JSON
-)" >/dev/null
+)
+
+if aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
+  # Existing policy: verify it actually points at THIS bucket, do not just assume.
+  #
+  # Checking only that the policy exists is how this script previously left a stale
+  # policy in place: an earlier run created it against a different bucket name, the
+  # bucket was then recreated with the account-id suffix, and the re-run skipped the
+  # update. The credentials came out valid but with no access to the bucket, and the
+  # error read "no identity-based policy allows s3:PutObject" — which looks like the
+  # policy was never attached rather than pointing somewhere else.
+  CURRENT_VERSION=$(aws iam get-policy --policy-arn "$POLICY_ARN" --query 'Policy.DefaultVersionId' --output text)
+  CURRENT_DOC=$(aws iam get-policy-version --policy-arn "$POLICY_ARN" --version-id "$CURRENT_VERSION" \
+    --query 'PolicyVersion.Document' --output json)
+
+  if echo "$CURRENT_DOC" | grep -q "arn:aws:s3:::${BUCKET}/\*"; then
+    ok "already exists and targets $BUCKET"
+  else
+    say "   policy exists but targets a different bucket — updating"
+    # IAM allows at most 5 versions; drop the oldest non-default before adding one.
+    for v in $(aws iam list-policy-versions --policy-arn "$POLICY_ARN" \
+                 --query 'Versions[?!IsDefaultVersion].VersionId' --output text); do
+      aws iam delete-policy-version --policy-arn "$POLICY_ARN" --version-id "$v" >/dev/null 2>&1 || true
+    done
+    aws iam create-policy-version --policy-arn "$POLICY_ARN" \
+      --policy-document "$POLICY_DOC" --set-as-default >/dev/null
+    ok "updated to target $BUCKET"
+  fi
+else
+  # Note the two different ARN shapes: object actions need /*, bucket actions do not.
+  aws iam create-policy --policy-name "$POLICY_NAME" --tags "$TAGS_IAM" \
+    --description "Payload CMS media access for the Snapmart POC bucket" \
+    --policy-document "$POLICY_DOC" >/dev/null
   ok "created and tagged"
 fi
 
