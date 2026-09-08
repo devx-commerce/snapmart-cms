@@ -1,0 +1,7 @@
+# pnpm 11 gates native build scripts behind `allowBuilds` (it replaced
+# `onlyBuiltDependencies`). Without these, `pnpm install` exits 1 — and
+# `next dev` runs an install preflight, so the dev server refuses to start.
+allowBuilds:
+  esbuild: true          # bundler used by vite/vitest
+  sharp: true            # Payload's image resizing — required for upload imageSizes
+  unrs-resolver: true    # eslint import resolution
