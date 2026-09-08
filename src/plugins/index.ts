@@ -5,6 +5,7 @@ import type { Plugin } from 'payload'
 
 import { auditLogPlugin } from './audit-log'
 import { storagePlugin } from './storage'
+import { cacheControlPlugin } from './storage-cache-control'
 
 /**
  * Two plugins are installed, both because the SoW names the need. The point is to prove the
@@ -52,4 +53,12 @@ const auditLog: Plugin = auditLogPlugin({
   exclude: ['users'],
 })
 
-export const plugins: Plugin[] = [storagePlugin, seo, redirects, auditLog]
+export const plugins: Plugin[] = [
+  storagePlugin,
+  // MUST follow storagePlugin: it appends an afterChange hook that runs against the
+  // uploaded object, which does not exist until the storage adapter's own hook has run.
+  cacheControlPlugin('media'),
+  seo,
+  redirects,
+  auditLog,
+]

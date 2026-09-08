@@ -14,7 +14,9 @@ Updated at the end of every phase. Nothing is marked **Done** without its comman
 
 Status values: `⬜ Not started` · `⏳ In progress` · `✅ Done` · `⛔ Blocked`
 
-**All phases complete.** Three follow-ups are open:
+**All phases complete.** Follow-ups: **S3 without CloudFront** — provisioning, the
+public-read policy and the Cache-Control gap, in
+[09-s3-without-cloudfront.md](09-s3-without-cloudfront.md);
 **audit logs** — Payload has none natively; a working immutable implementation is on branch
 `spike/audit-logs`, written up in [08-audit-logs.md](08-audit-logs.md);
 **preview across two repos** — answered and verified in
