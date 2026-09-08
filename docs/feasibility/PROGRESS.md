@@ -14,7 +14,9 @@ Updated at the end of every phase. Nothing is marked **Done** without its comman
 
 Status values: `⬜ Not started` · `⏳ In progress` · `✅ Done` · `⛔ Blocked`
 
-**All phases complete.** Two follow-ups are open:
+**All phases complete.** Three follow-ups are open:
+**audit logs** — Payload has none natively; a working immutable implementation is on branch
+`spike/audit-logs`, written up in [08-audit-logs.md](08-audit-logs.md);
 **preview across two repos** — answered and verified in
 [07-preview-across-two-repos.md](07-preview-across-two-repos.md); and **real S3 / CloudFront**, pending credentials
 — setup spec and preflight in

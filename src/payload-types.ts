@@ -80,6 +80,7 @@ export interface Config {
     'page-templates': PageTemplate;
     media: Media;
     users: User;
+    'audit-log': AuditLog;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -94,6 +95,7 @@ export interface Config {
     'page-templates': PageTemplatesSelect<false> | PageTemplatesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    'audit-log': AuditLogSelect<false> | AuditLogSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -417,6 +419,61 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Immutable record of every content change: who, what, when, and the before/after of each field. Entries cannot be edited or deleted.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-log".
+ */
+export interface AuditLog {
+  id: number;
+  summary?: string | null;
+  /**
+   * Null for system operations (seeds, migrations).
+   */
+  user?: (number | null) | User;
+  /**
+   * Captured at write time so the trail survives the user being deleted.
+   */
+  userEmail?: string | null;
+  operation: 'create' | 'update' | 'delete';
+  collectionSlug: string;
+  documentId: string;
+  /**
+   * The document's title at the time, so a deleted document is still identifiable.
+   */
+  documentLabel?: string | null;
+  /**
+   * Field names only — queryable without parsing the diff.
+   */
+  changedFields?: string[] | null;
+  /**
+   * Per field: { from, to }. On create, the created values. On delete, the last known values.
+   */
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * IP, user agent, and whether the change was an autosave.
+   */
+  context?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Old URL -> new URL. Populate from the Magento URL map before cutover so search rankings survive the replatform.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -488,6 +545,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'audit-log';
+        value: number | AuditLog;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -681,6 +742,24 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-log_select".
+ */
+export interface AuditLogSelect<T extends boolean = true> {
+  summary?: T;
+  user?: T;
+  userEmail?: T;
+  operation?: T;
+  collectionSlug?: T;
+  documentId?: T;
+  documentLabel?: T;
+  changedFields?: T;
+  changes?: T;
+  context?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

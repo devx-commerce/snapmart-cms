@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, authenticatedOrPublished } from '../access'
 import { templateBlockSlugs } from '../blocks'
+import { auditChange, auditDelete } from '../hooks/auditLog'
 import { notifyCacheInvalidation } from '../hooks/notifyCacheInvalidation'
 
 /**
@@ -33,7 +34,8 @@ export const PageTemplates: CollectionConfig = {
     delete: authenticated,
   },
   hooks: {
-    afterChange: [notifyCacheInvalidation('page-templates')],
+    afterChange: [notifyCacheInvalidation('page-templates'), auditChange('page-templates')],
+    afterDelete: [auditDelete('page-templates')],
   },
   versions: { drafts: true, maxPerDoc: 20 },
   fields: [

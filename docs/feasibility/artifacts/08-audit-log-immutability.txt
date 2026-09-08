@@ -1,0 +1,11 @@
+=== immutability: can the ADMIN tamper with the trail? (audit-log id 5) ===
+  read     HTTP 200
+  update   HTTP 403
+  delete   HTTP 403
+  create   HTTP 403
+  anonymous read HTTP 403
+
+  entry still intact and unforged:
+    userEmail = admin@snapmart.local | operation = delete
+  total entries (a forged one would make this 2):
+    2

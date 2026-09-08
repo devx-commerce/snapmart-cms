@@ -1,0 +1,16 @@
+=== 1. change two text fields ===
+   who   : admin@snapmart.local
+   what  : update product-content/8 — Landers Extra Virgin Olive Oil 500ml
+   fields: shortDescription
+      shortDescription: "Changed by the BFF service account." → "Edited at 2026-09-08T10:17:48.412Z"
+
+=== 2. save the SAME value again — no entry should be written ===
+   ✓ no new entry — a no-op save is not a change
+
+=== 3. can an admin rewrite the trail? ===
+   update  → HTTP 403 (denied ✓)
+   delete  → HTTP 403 (denied ✓)
+   create  → HTTP 403 (denied ✓)
+   anonymous read → HTTP 403 (denied ✓)
+
+Entries before this run: 5 · after: 6

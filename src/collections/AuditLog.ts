@@ -86,14 +86,21 @@ export const AuditLog: CollectionConfig = {
       ],
       admin: { readOnly: true },
     },
-    { name: 'collectionSlug', type: 'text', required: true, index: true, admin: { readOnly: true } },
+    {
+      name: 'collectionSlug',
+      type: 'text',
+      required: true,
+      index: true,
+      admin: { readOnly: true },
+    },
     { name: 'documentId', type: 'text', required: true, index: true, admin: { readOnly: true } },
     {
       name: 'documentLabel',
       type: 'text',
       admin: {
         readOnly: true,
-        description: "The document's title at the time, so a deleted document is still identifiable.",
+        description:
+          "The document's title at the time, so a deleted document is still identifiable.",
       },
     },
     {
@@ -111,13 +118,17 @@ export const AuditLog: CollectionConfig = {
       type: 'json',
       admin: {
         readOnly: true,
-        description: 'Per field: { from, to }. On create, the created values. On delete, the last known values.',
+        description:
+          'Per field: { from, to }. On create, the created values. On delete, the last known values.',
       },
     },
     {
       name: 'context',
       type: 'json',
-      admin: { readOnly: true, description: 'IP, user agent, and whether the change was an autosave.' },
+      admin: {
+        readOnly: true,
+        description: 'IP, user agent, and whether the change was an autosave.',
+      },
     },
   ],
 }
