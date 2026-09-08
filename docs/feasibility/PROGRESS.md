@@ -14,6 +14,10 @@ Updated at the end of every phase. Nothing is marked **Done** without its comman
 
 Status values: `⬜ Not started` · `⏳ In progress` · `✅ Done` · `⛔ Blocked`
 
+**All phases complete.** A follow-up is open: **real S3 / CloudFront**, pending credentials
+— setup spec and preflight in
+[06-aws-s3-cloudfront-setup.md](06-aws-s3-cloudfront-setup.md), run `pnpm check:s3`.
+
 **All phases complete.** The consolidated answer to all six questions is in
 [**REPORT.md**](REPORT.md). Final verification sweep:
 [`artifacts/00-final-verification.txt`](artifacts/00-final-verification.txt) —
