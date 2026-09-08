@@ -14,7 +14,9 @@ Updated at the end of every phase. Nothing is marked **Done** without its comman
 
 Status values: `⬜ Not started` · `⏳ In progress` · `✅ Done` · `⛔ Blocked`
 
-**All phases complete.** A follow-up is open: **real S3 / CloudFront**, pending credentials
+**All phases complete.** Two follow-ups are open:
+**preview across two repos** — answered and verified in
+[07-preview-across-two-repos.md](07-preview-across-two-repos.md); and **real S3 / CloudFront**, pending credentials
 — setup spec and preflight in
 [06-aws-s3-cloudfront-setup.md](06-aws-s3-cloudfront-setup.md), run `pnpm check:s3`.
 
