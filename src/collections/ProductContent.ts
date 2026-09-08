@@ -94,6 +94,37 @@ export const ProductContent: CollectionConfig = {
       blocks: [],
     },
     {
+      // Reports which template resolved this document and under which strategy, so a
+      // consumer can cache-key or log on it. Declared for the same reason as
+      // `resolvedDetail` below: a hook-attached field is invisible to GraphQL and to the
+      // generated types until it exists in the config.
+      name: 'templateApplied',
+      type: 'json',
+      virtual: true,
+      admin: { hidden: true, readOnly: true },
+    },
+    {
+      // Declared so it exists in the GraphQL schema and the generated types. `virtual: true`
+      // keeps it out of Postgres entirely -- nothing is stored, no table is created; the
+      // afterRead hook fills it on every read.
+      //
+      // WITHOUT this declaration the template resolution is invisible to GraphQL: a field
+      // that only exists because a hook attached it to the returned object is not part of
+      // the schema, so it cannot be queried. REST returns it either way, which makes the
+      // gap easy to miss.
+      name: 'resolvedDetail',
+      type: 'blocks',
+      virtual: true,
+      label: 'Resolved layout (computed)',
+      admin: {
+        hidden: true,
+        readOnly: true,
+        description: "The template's shared sections with this product's own blocks spliced in.",
+      },
+      blockReferences: [...layoutBlockSlugs],
+      blocks: [],
+    },
+    {
       name: 'productDetail',
       type: 'blocks',
       label: 'Product detail sections',

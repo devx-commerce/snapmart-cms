@@ -1,0 +1,5 @@
+=== REST payload by depth, after the fix (one product-content document) ===
+depth=0    2512 bytes  contentTemplate: id 3 | nested reusable source: id 3
+depth=1    4854 bytes  contentTemplate: FULL | nested reusable source: FULL
+depth=2    5719 bytes  contentTemplate: FULL | nested reusable source: FULL
+depth=3    5719 bytes  contentTemplate: FULL | nested reusable source: FULL

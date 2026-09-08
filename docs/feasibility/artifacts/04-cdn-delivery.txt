@@ -1,0 +1,14 @@
+=== objects in the bucket (MinIO standing in for S3) ===
+[2026-09-08 09:17:38 UTC] 7.8KiB STANDARD landers-hero-1920x960.png
+[2026-09-08 09:17:38 UTC] 1.0KiB STANDARD landers-hero-300x300.png
+[2026-09-08 09:17:38 UTC] 2.5KiB STANDARD landers-hero-768x512.png
+[2026-09-08 09:17:38 UTC]  11KiB STANDARD landers-hero.png
+
+=== fetch each URL Payload handed out (unauthenticated, as a browser would) ===
+http://localhost:9000/snapmart-cms-media/landers-hero.png      HTTP 200  11625 bytes  image/png
+http://localhost:9000/snapmart-cms-media/landers-hero-300x300.png HTTP 200  1048 bytes  image/png
+http://localhost:9000/snapmart-cms-media/landers-hero-768x512.png HTTP 200  2542 bytes  image/png
+http://localhost:9000/snapmart-cms-media/landers-hero-1920x960.png HTTP 200  8013 bytes  image/png
+
+=== Payload's own file route should NOT be serving these (disablePayloadAccessControl) ===
+GET /api/media/file/landers-hero.png -> HTTP 500

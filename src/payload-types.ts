@@ -345,6 +345,19 @@ export interface ProductContent {
    * Fills the template's 'Extra' slot. For the one product that needs something the shared layout does not provide.
    */
   templateOverrides?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock | ReusableContentBlock)[] | null;
+  templateApplied?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * The template's shared sections with this product's own blocks spliced in.
+   */
+  resolvedDetail?: (HeroBlock | RichTextBlock | MediaBlockType | CtaBlock | ReusableContentBlock)[] | null;
   /**
    * Sections unique to this product. Sections shared across every product come from its template (Phase 3).
    */
@@ -499,6 +512,8 @@ export interface ProductContentSelect<T extends boolean = true> {
   heroImage?: T;
   contentTemplate?: T;
   templateOverrides?: T | {};
+  templateApplied?: T;
+  resolvedDetail?: T | {};
   productDetail?: T | {};
   updatedAt?: T;
   createdAt?: T;

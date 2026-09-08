@@ -23,15 +23,50 @@ type TemplateDoc = {
  * sections, and a change that has to reach all of them.
  */
 
-/** Resolve the template once per request, whatever depth the caller asked for. */
+/**
+ * Resolve the template once per request. Without this a 50-product listing is 50 template
+ * lookups; with it, one per distinct template. Keyed on the request so nothing leaks
+ * between requests, and on (id, depth) because the same template at a different depth is a
+ * different payload.
+ */
 const templateCache = new WeakMap<PayloadRequest, Map<string, TemplateDoc | null>>()
 
+/**
+ * The depth the caller asked for, so blocks spliced in by this hook are hydrated to the
+ * same level as the rest of the response.
+ */
+const requestedDepth = (req: PayloadRequest): number => {
+  const raw = req.query?.depth
+  const parsed = Number(Array.isArray(raw) ? raw[0] : raw)
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 5)) : 1
+}
+
+/**
+ * Always loads the template itself, even when Payload has already populated the
+ * relationship on the document.
+ *
+ * Reusing the pre-populated object looks like the obvious optimisation and is a trap: a
+ * relationship Payload populated at document-depth N contains its own relationships at
+ * depth N-1, so the spliced-in blocks come back hydrated to a different level than the
+ * caller asked for -- and non-monotonically. Measured on this schema before the fix:
+ *
+ *   depth=0 -> contentTemplate was an id, so the hook fetched at a fixed depth 1 and the
+ *              nested reusable-content source came back FULL
+ *   depth=1 -> contentTemplate was pre-populated, its nested source was left as an id
+ *   depth=2 -> both FULL
+ *
+ * So `?depth=0` returned MORE data than `?depth=1`. Loading explicitly at the requested
+ * depth costs one cached query and makes the response predictable.
+ */
 const loadTemplate = async (req: PayloadRequest, ref: unknown): Promise<TemplateDoc | null> => {
   if (!ref) return null
-  // depth >= 1 already populated it
-  if (typeof ref === 'object') return ref as TemplateDoc
 
-  const key = String(ref)
+  const id = typeof ref === 'object' ? (ref as TemplateDoc).id : ref
+  if (id === undefined || id === null) return null
+
+  const depth = requestedDepth(req)
+  const key = `${id}@${depth}`
+
   let cache = templateCache.get(req)
   if (!cache) {
     cache = new Map()
@@ -40,7 +75,7 @@ const loadTemplate = async (req: PayloadRequest, ref: unknown): Promise<Template
   if (cache.has(key)) return cache.get(key) ?? null
 
   const doc = (await req.payload
-    .findByID({ collection: 'page-templates', id: key, depth: 1, req })
+    .findByID({ collection: 'page-templates', id: String(id), depth, req })
     .catch(() => null)) as TemplateDoc | null
 
   cache.set(key, doc)

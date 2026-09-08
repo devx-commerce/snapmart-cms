@@ -1,0 +1,13 @@
+=== a dedicated service user for the BFF (not the admin account) ===
+   created user 2 bff@snapmart.local | enableAPIKey: true | apiKey set: true
+
+=== the three access modes side by side ===
+anonymous, ?draft=true                         HTTP 200  docs 2 statuses: published
+API key, ?draft=true                           HTTP 200  docs 2 statuses: published
+bad API key                                    HTTP 403
+
+=== does a draft leak? (1 draft + 2 published now exist) ===
+anonymous                                            HTTP 200  total 2 | holiday-campaign:published, about-landers:published
+anonymous + ?draft=true                              HTTP 200  total 2 | holiday-campaign:published, about-landers:published
+API key (BFF service user)                           HTTP 200  total 3 | draft-only:draft, holiday-campaign:published, about-landers:published
+API key + ?draft=true                                HTTP 200  total 3 | draft-only:draft, holiday-campaign:published, about-landers:published

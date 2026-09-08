@@ -13,7 +13,9 @@ import { PageTemplates } from './collections/PageTemplates'
 import { ProductContent } from './collections/ProductContent'
 import { ReusableContent } from './collections/ReusableContent'
 import { Users } from './collections/Users'
+import { bffProductContent } from './endpoints/bff'
 import { seedEndpoint } from './endpoints/seed'
+import { storagePlugin } from './plugins/storage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -42,7 +44,7 @@ export default buildConfig({
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URL || '' },
   }),
-  endpoints: [seedEndpoint],
+  endpoints: [seedEndpoint, bffProductContent],
   sharp,
-  plugins: [],
+  plugins: [storagePlugin],
 })

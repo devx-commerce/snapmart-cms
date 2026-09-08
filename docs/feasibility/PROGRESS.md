@@ -9,8 +9,8 @@ Updated at the end of every phase. Nothing is marked **Done** without its comman
 | 1 | Schema and content authoring | ✅ Done | [01-schema.md](01-schema.md) · 9→29 tables · boundary write rejected 400 · both collections authored in the panel |
 | 2 | Reusable content across collection types | ✅ Done | [02-reusable-content.md](02-reusable-content.md) · 1 source → 3 consumers in 2 collection types, consumers never written · copy-on-write verified in the panel |
 | 3 | Page templates / layout inheritance | ✅ Done | [03-templates.md](03-templates.md) · 2 products store 1 block, render 4 · template edit reached both, neither written |
-| 4 | GraphQL, REST, and CDN-backed assets | ⏳ In progress | — |
-| 5 | Plugins, third-party integration, report | ⬜ Not started | — |
+| 4 | GraphQL, REST, and CDN-backed assets | ✅ Done | [04-apis-and-cdn.md](04-apis-and-cdn.md) · playground live · 4 objects served from the CDN host · drafts do not leak to anonymous |
+| 5 | Plugins, third-party integration, report | ⏳ In progress | — |
 
 Status values: `⬜ Not started` · `⏳ In progress` · `✅ Done` · `⛔ Blocked`
 
@@ -245,3 +245,56 @@ choice is per template rather than hard-coded per collection.
   template edits can be staged.
 - A product's `updatedAt` no longer moves when its rendered content changes — the reason
   Phase 5 looks at cache invalidation.
+
+---
+
+## Phase 4 — GraphQL, REST, and CDN-backed assets
+
+**Status:** ✅ Done → full write-up in [04-apis-and-cdn.md](04-apis-and-cdn.md)
+
+### Built
+`@payloadcms/storage-s3` against MinIO with `disablePayloadAccessControl: true` and a
+`generateFileURL` that emits `CDN_BASE_URL`; a custom
+`GET /api/bff/product-content/:medusaProductId` returning the finished layout keyed by the
+id the BFF already holds from Medusa; a dedicated `bff@snapmart.local` service user with an
+API key.
+
+### Proof
+- GraphQL Playground renders at `/api/graphql-playground` with Docs and Schema panels.
+- Media upload → all four objects (original + 3 `imageSizes`) in the bucket, all four
+  **HTTP 200 unauthenticated from the CDN host**, `image/png`, correct byte counts.
+- BFF endpoint returns `richText → richText → reusableContent → richText → cta` for a
+  product storing one block, 404s on an unknown id, and carries no price/stock/name.
+- `pnpm lint` exit 0 · `pnpm typecheck` exit 0 · Phase 2 and 3 demos still pass.
+
+### Findings
+1. **A hook-computed field is invisible to GraphQL.** `resolvedDetail` worked over REST and
+   did not exist in the GraphQL schema at all — so Phase 3's template resolution silently
+   did not reach GraphQL consumers. Fixed with `virtual: true`, which adds it to the schema
+   and the generated types while creating **zero tables and zero columns**. The same bug
+   recurred with `templateApplied` and was caught by the typechecker.
+2. **GraphQL will not populate relationships inside a virtual field.** Isolated with a
+   control: the same `reusableContent.source { title }` resolves in the stored
+   `pages.layout` and returns `null` in the virtual `resolvedDetail`. REST returns it in
+   both. **So GraphQL cannot serve template-resolved PDP layouts today** — recommend REST
+   plus the custom endpoint for the read path.
+3. **`depth` hydration was non-monotonic** — `?depth=0` returned *more* data (3377 B) than
+   `?depth=1` (3989 B) — because the hook reused Payload's pre-populated relationship
+   rather than choosing its own depth. Fixed; now 2512 → 4854 → 5719 → 5719 B. Generalises:
+   any hook composing from a related document must set its depth explicitly.
+4. **Drafts do not leak to anonymous callers, but an API key sees them on every request.**
+   `?draft=true` anonymously returns published only; the API-key user sees the draft
+   whether it asks or not. **The BFF's normal read path should be anonymous**, with the API
+   key reserved for preview. Also: `enableAPIKey: true` over REST does not mint a key.
+5. Payload's `/api/media/file/*` route **500s instead of 404ing** once
+   `disablePayloadAccessControl` is on — matters because the Magento migration carries old
+   media URLs.
+6. In Payload 3.88 the S3 adapter is a **plugin**; the top-level `storage:` key in current
+   docs is v4 and silently does nothing on v3.
+
+### Open questions raised
+- Media filenames are not content-hashed, so a same-name re-upload serves a stale edge
+  object until invalidated.
+- No `Cache-Control` is set on upload; CDN behaviour falls back to bucket defaults.
+- The Local API is unavailable to the BFF (separate process), so every read is an HTTP hop
+  — the argument for caching template-resolved responses at the BFF.
