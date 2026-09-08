@@ -104,14 +104,28 @@ check, which is a confusing place to start debugging.
 2. **Origin domain:** pick your bucket from the dropdown. Take the **S3 REST endpoint**
    (`<bucket>.s3.<region>.amazonaws.com`), not the website endpoint.
 3. **Origin access:** **Origin access control (OAC)** → Create new OAC → accept the defaults.
-4. CloudFront shows a banner offering the generated bucket policy — **copy it and apply it to
-   the bucket** (S3 → your bucket → Permissions → Bucket policy). Without this step every
-   request returns 403.
+4. **The bucket policy is applied for you.** The current console shows a banner reading
+   *"Because you granted CloudFront access to your origin, CloudFront can write and update S3
+   bucket policies…"* and writes it on create. (Older versions of the console gave you a
+   "Copy policy" button and required a manual paste into S3 — if you see that instead, do it,
+   because without the policy every request returns 403.)
 5. **Viewer protocol policy:** Redirect HTTP to HTTPS.
-6. **Tags:** all three.
+6. **Tags:** all three — **but the current create flow may not ask for them.** If there is no
+   Tags step, add them immediately after via **CloudFront → your distribution → Tags →
+   Manage tags**.
 7. Create, then wait for **Deploying** to finish — 5–10 minutes. A 404 before then is normal.
-8. Copy the **Distribution domain name** (`dxxxxxxxxxxxxx.cloudfront.net`) into `.env` as
+8. **Verify the policy landed:** S3 → your bucket → **Permissions → Bucket policy** should now
+   show a statement with `"Service": "cloudfront.amazonaws.com"` and an `AWS:SourceArn`
+   matching the distribution. An empty policy here after deployment is the difference between
+   working and 403 on every image, and it is silent.
+9. Copy the **Distribution domain name** (`dxxxxxxxxxxxxx.cloudfront.net`) into `.env` as
    `CDN_BASE_URL`, with `https://` and **no trailing slash**.
+
+### If `pnpm check:s3` returns 403 and the bucket policy looks correct
+
+The current create flow enables **security protections (AWS WAF)** by default. WAF can
+challenge a plain `curl`, which looks identical to a permissions failure from the outside.
+Disable it temporarily to isolate: **CloudFront → distribution → Security → Edit**.
 
 ---
 
