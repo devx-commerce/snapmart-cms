@@ -26,6 +26,7 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
 
   // ---- the content authored once ----
   const membership = await payload.create({
+    context: { skipAudit: true },
     collection: 'reusable-content',
     data: {
       title: 'Landers Membership Benefits',
@@ -54,6 +55,7 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
   // Phase 2's mechanism composes inside Phase 3's), and two slots saying where each
   // product's own content goes.
   const pdpTemplate = await payload.create({
+    context: { skipAudit: true },
     collection: 'page-templates',
     data: {
       name: 'Standard PDP',
@@ -85,6 +87,7 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
 
   // ---- a copy-on-create template, for contrast (Strategy A) ----
   const campaignTemplate = await payload.create({
+    context: { skipAudit: true },
     collection: 'page-templates',
     data: {
       name: 'Campaign Landing (starting point)',
@@ -112,6 +115,7 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
 
   // ---- consumer 1: a page ----
   const page = await payload.create({
+    context: { skipAudit: true },
     collection: 'pages',
     data: {
       title: 'About Landers',
@@ -149,6 +153,7 @@ export const seed = async (payload: Payload): Promise<Record<string, unknown>> =
   for (const p of productData) {
     products.push(
       await payload.create({
+        context: { skipAudit: true },
         collection: 'product-content',
         data: {
           medusaProductId: p.medusaProductId,

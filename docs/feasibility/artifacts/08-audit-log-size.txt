@@ -1,0 +1,13 @@
+=== 1. THE CASE YOU HIT: one field inside one block ===
+  changedFields: layout.0.subheading
+    layout.0.subheading: "it is only a starting point." → "ONLY THIS FIELD CHANGED"
+  changes size: 94 bytes   (whole-array version was 926)
+
+=== 2. CREATE — stores field names, not a copy of the document ===
+  changedFields: title, slug, contentTemplate, layout, meta, _status
+  changes size: 360 bytes  (a full copy would be ~700+)
+
+=== 3. DELETE — keeps values, because the document is about to be gone ===
+  operation: delete, fields: 13
+  changes size: 819 bytes
+  long values truncated: yes — "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…

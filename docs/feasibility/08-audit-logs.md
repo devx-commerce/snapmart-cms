@@ -214,6 +214,76 @@ a change a person made.
 system on every request. Auditing them turns a read path into a write path. Before enabling
 auditing on a collection, ask what the framework itself writes to it.
 
+## Diff granularity and storage
+
+Two problems found by using it, both fixed.
+
+### Editing one field reported the whole blocks array
+
+The first diff compared **top-level fields only**. `layout` is one field, so changing a
+single `subheading` inside one block reported the entire array on both sides — two 40-line
+JSON dumps with one line different between them. Seen on a real entry:
+
+```
+"layout": { "to": [ …both blocks in full… ], "from": [ …both blocks in full… ] }
+```
+
+`./diff.ts` now walks into arrays and objects and reports leaf paths:
+
+```
+layout.0.subheading: "it is only a starting point." → "ONLY THIS FIELD CHANGED"
+
+changes size: 94 bytes   (was 926)
+```
+
+Three details that make it hold up on real documents:
+
+- **Block rows are matched by `id`, not index.** Inserting a block at the top would
+  otherwise renumber every row after it and report the whole array as rewritten. Adds,
+  removes and reorders are reported as such (`[added …]`, `[removed …]`, `[order]`).
+- **Lexical rich text is compared as its rendered plain text.** Its JSON is a deep tree of
+  nodes and formatting state; a node-level diff is accurate and unreadable. An auditor needs
+  "the paragraph now says X instead of Y".
+- **Recursion is depth-capped** at 6, so a pathological structure reports as one changed
+  path rather than being walked forever.
+
+### Storage — the initial content load is the worst case
+
+Measured per operation:
+
+| Operation | avg `changes` JSON | why |
+|---|---|---|
+| **update** | **98 bytes** | only the leaves that changed |
+| **create** | **389 bytes** | field *names* only, no values |
+| **delete** | 883 bytes | values kept deliberately |
+
+Three decisions behind those numbers:
+
+1. **A create records which fields were populated, not their values.** Storing the values
+   would make every audit row a second copy of the document it describes — and creates are
+   the bulk of the volume during an initial load or the Magento content import. Nothing is
+   lost: the document exists, and its first version holds exactly those values.
+
+2. **A delete keeps values.** It is the one case where the data is otherwise gone — the
+   document and its version history both disappear. Long values are truncated to 120
+   characters with the original length noted.
+
+3. **Bulk operations can opt out entirely** with `context: { skipAudit: true }`:
+
+   ```ts
+   payload.create({ …, context: { skipAudit: true } })
+   ```
+
+   The seed script uses it. Thousands of rows recording "the importer created everything" is
+   storage spent on something one line in a runbook already says. Use it for the Magento
+   import and record the migration itself instead.
+
+Autosave is also excluded — it fires every 375 ms while an editor types.
+
+**Still to decide: retention.** Entries accumulate forever. Payload's Jobs system can prune
+on a schedule, but the retention period is a compliance decision, not a technical one —
+deleting audit history has its own implications. Decide the period first.
+
 ## Recommendation
 
 **Build it, and keep versions on.** They are complementary, not alternatives:
