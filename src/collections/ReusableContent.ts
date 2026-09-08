@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, authenticatedOrPublished } from '../access'
 import { contentBlockSlugs } from '../blocks'
-import { auditChange, auditDelete } from '../hooks/auditLog'
 import { notifyCacheInvalidation } from '../hooks/notifyCacheInvalidation'
 
 /**
@@ -30,8 +29,7 @@ export const ReusableContent: CollectionConfig = {
     delete: authenticated,
   },
   hooks: {
-    afterChange: [notifyCacheInvalidation('reusable-content'), auditChange('reusable-content')],
-    afterDelete: [auditDelete('reusable-content')],
+    afterChange: [notifyCacheInvalidation('reusable-content')],
   },
   versions: { drafts: true, maxPerDoc: 20 },
   fields: [

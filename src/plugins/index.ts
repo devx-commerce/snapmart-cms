@@ -3,6 +3,7 @@ import { seoPlugin } from '@payloadcms/plugin-seo'
 import type { GenerateTitle } from '@payloadcms/plugin-seo/types'
 import type { Plugin } from 'payload'
 
+import { auditLogPlugin } from './audit-log'
 import { storagePlugin } from './storage'
 
 /**
@@ -37,4 +38,18 @@ const redirects: Plugin = redirectsPlugin({
   },
 })
 
-export const plugins: Plugin[] = [storagePlugin, seo, redirects]
+/**
+ * Audits every collection except the ones named. Opt-out rather than opt-in, so a
+ * collection added later is audited by default rather than silently missed.
+ */
+const auditLog: Plugin = auditLogPlugin({
+  // `users` is excluded because auditing it makes login take MINUTES.
+  // Every login writes to the user's `sessions` array, which fires afterChange, which
+  // writes an audit row inside the login's own transaction. Measured: login went from
+  // ~50ms to 5 minutes. See docs/feasibility/08-audit-logs.md.
+  // Auditing role changes is still wanted -- the fix is to audit only the fields that
+  // matter on this collection, not to give up on it. Tracked as an open item.
+  exclude: ['users'],
+})
+
+export const plugins: Plugin[] = [storagePlugin, seo, redirects, auditLog]

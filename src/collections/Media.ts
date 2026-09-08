@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, authenticated } from '../access'
-import { auditChange, auditDelete } from '../hooks/auditLog'
 
 /**
  * Uploads. `imageSizes` exist so Phase 4 can check whether the S3/CDN adapter uploads
@@ -13,10 +12,6 @@ export const Media: CollectionConfig = {
     create: authenticated,
     update: authenticated,
     delete: authenticated,
-  },
-  hooks: {
-    afterChange: [auditChange('media')],
-    afterDelete: [auditDelete('media')],
   },
   upload: {
     imageSizes: [

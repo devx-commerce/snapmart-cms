@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { authenticated } from '../access'
+import { authenticated } from '../../access'
 
 /**
  * Who changed what, when.

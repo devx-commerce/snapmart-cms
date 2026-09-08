@@ -2,7 +2,6 @@ import type { CollectionConfig } from 'payload'
 import { anyone, authenticated, authenticatedOrPublished } from '../access'
 import { layoutBlockSlugs } from '../blocks'
 import { copyTemplateOnCreate } from '../hooks/applyTemplate'
-import { auditChange, auditDelete } from '../hooks/auditLog'
 import { notifyCacheInvalidation } from '../hooks/notifyCacheInvalidation'
 
 /**
@@ -29,8 +28,7 @@ export const Pages: CollectionConfig = {
     // Strategy A: a copy-on-create template seeds a new page's layout once, then gets out
     // of the way. Editors can change anything; later template edits do not reach this page.
     beforeValidate: [copyTemplateOnCreate('layout')],
-    afterChange: [notifyCacheInvalidation('pages'), auditChange('pages')],
-    afterDelete: [auditDelete('pages')],
+    afterChange: [notifyCacheInvalidation('pages')],
   },
   versions: {
     drafts: { autosave: { interval: 375 } },

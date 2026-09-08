@@ -185,6 +185,35 @@ Two related decisions in the same hook:
 
 ---
 
+## ⚠️ Incident: auto-attaching to `users` made login take 5 minutes
+
+Found by breaking it, so it is worth recording rather than quietly fixing.
+
+The plugin attaches to every collection by default (opt-out, so a new collection is never
+silently unaudited). Applied to `users`, that is a trap:
+
+```
+POST /api/users/login   200 in     15.8s
+PATCH /api/users/1      200 in   3.0min
+POST /api/users/login   200 in   5.0min      ← was ~50ms
+```
+
+**Cause.** A successful login writes to the user's `sessions` array. That is an update, so
+`afterChange` fires, so the audit hook writes an audit row — inside the login's own database
+transaction. Every login pays for an extra insert against a collection with a foreign key
+back to the row being updated.
+
+**Immediate fix:** `exclude: ['users']`. Login returned to ~60ms.
+
+**Proper fix, not yet done.** Excluding `users` gives up exactly the thing worth auditing —
+role changes. What is actually needed is a per-collection field allowlist, so `users` audits
+`role` and `email` and ignores `sessions`, which is machine-written bookkeeping rather than
+a change a person made.
+
+**The general lesson for any audit log on this platform:** some fields are written by the
+system on every request. Auditing them turns a read path into a write path. Before enabling
+auditing on a collection, ask what the framework itself writes to it.
+
 ## Recommendation
 
 **Build it, and keep versions on.** They are complementary, not alternatives:

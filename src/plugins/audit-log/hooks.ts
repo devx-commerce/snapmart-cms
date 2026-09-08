@@ -129,17 +129,18 @@ const write = async (
 }
 
 export const auditChange =
-  (collectionSlug: string): CollectionAfterChangeHook =>
+  (collectionSlug: string, redact: string[] = []): CollectionAfterChangeHook =>
   async ({ doc, previousDoc, req, operation, context }) => {
     // Autosave fires every 375ms while an editor types. Logging each one buries the
     // deliberate saves under hundreds of keystroke-level rows.
     if (context?.isAutosave) return doc
 
+    const skip = (key: string) => NEVER_DIFF.has(key) || redact.includes(key)
     const changes: Diff = {}
 
     if (operation === 'update' && previousDoc) {
       for (const key of new Set([...Object.keys(doc ?? {}), ...Object.keys(previousDoc)])) {
-        if (NEVER_DIFF.has(key)) continue
+        if (skip(key)) continue
         if (differs(doc?.[key], previousDoc[key])) {
           changes[key] = {
             from: summarise(normalise(previousDoc[key])),
@@ -151,7 +152,7 @@ export const auditChange =
       if (Object.keys(changes).length === 0) return doc
     } else {
       for (const [key, value] of Object.entries(doc ?? {})) {
-        if (NEVER_DIFF.has(key)) continue
+        if (skip(key)) continue
         changes[key] = { from: null, to: summarise(normalise(value)) }
       }
     }
@@ -172,7 +173,7 @@ export const auditChange =
   }
 
 export const auditDelete =
-  (collectionSlug: string): CollectionAfterDeleteHook =>
+  (collectionSlug: string, redact: string[] = []): CollectionAfterDeleteHook =>
   async ({ doc, req, id }) => {
     await write(req, {
       user: req.user?.id ?? null,
@@ -181,12 +182,14 @@ export const auditDelete =
       collectionSlug,
       documentId: String(id),
       documentLabel: labelFor(doc),
-      changedFields: Object.keys(doc ?? {}).filter((k) => !NEVER_DIFF.has(k)),
+      changedFields: Object.keys(doc ?? {}).filter(
+        (k) => !NEVER_DIFF.has(k) && !redact.includes(k),
+      ),
       // The last known state, because after this the document is gone and the version
       // history goes with it.
       changes: Object.fromEntries(
         Object.entries(doc ?? {})
-          .filter(([k]) => !NEVER_DIFF.has(k))
+          .filter(([k]) => !NEVER_DIFF.has(k) && !redact.includes(k))
           .map(([k, v]) => [k, { from: summarise(normalise(v)), to: null }]),
       ),
       context: contextOf(req),

@@ -1,0 +1,15 @@
+=== same behaviour, now with zero per-collection wiring ===
+=== 1. change two text fields ===
+   who   : admin@snapmart.local
+   what  : update product-content/8 — Landers Extra Virgin Olive Oil 500ml
+   fields: shortDescription
+      shortDescription: "Edited at 2026-09-08T10:19:20.524Z" → "Edited at 2026-09-08T11:34:36.832Z"
+
+=== 2. save the SAME value again — no entry should be written ===
+   ✓ no new entry — a no-op save is not a change
+
+=== 3. can an admin rewrite the trail? ===
+   update  → HTTP 403 (denied ✓)
+   delete  → HTTP 403 (denied ✓)
+
+=== and the thing manual wiring could not do: collections nobody remembered ===
