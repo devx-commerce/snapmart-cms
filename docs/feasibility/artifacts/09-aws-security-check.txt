@@ -1,0 +1,17 @@
+=== THE TEST THAT MATTERS: is the bucket private? ===
+  direct S3 URL, no credentials — this MUST fail:
+curl: unknown --write-out variable: 'host'
+    https:///... -> HTTP 403
+  same object via CloudFront — this MUST work:
+    d2ys2914nb86n5.cloudfront.net/... -> HTTP 200
+
+=== Block Public Access settings on the bucket ===
+
+aws: [ERROR]: An error occurred (AccessDenied) when calling the GetPublicAccessBlock operation: User: arn:aws:iam::735902244362:user/snapmart-cms-poc is not authorized to perform: s3:GetBucketPublicAccessBlock on resource: "arn:aws:s3:::snapmart-cms-media-poc-735902244362" because no identity-based policy allows the s3:GetBucketPublicAccessBlock action
+
+=== bucket policy — should grant CloudFront only, not '*' ===
+  (no bucket policy — OAC may use a different mechanism, or it is missing)
+
+=== encryption at rest ===
+
+aws: [ERROR]: An error occurred (AccessDenied) when calling the GetBucketEncryption operation: User: arn:aws:iam::735902244362:user/snapmart-cms-poc is not authorized to perform: s3:GetEncryptionConfiguration on resource: "arn:aws:s3:::snapmart-cms-media-poc-735902244362" because no identity-based policy allows the s3:GetEncryptionConfiguration action
