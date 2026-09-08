@@ -1,0 +1,81 @@
+import type { Block, BlockSlug } from 'payload'
+
+/**
+ * The POC's four content components.
+ *
+ * These are registered ONCE in payload.config.ts's top-level `blocks` array, and every
+ * collection that wants them references them by slug via `blockReferences`. That is the
+ * first half of "author once, use everywhere": one *schema*, shared across collection
+ * types. The second half -- one *content instance* shared across documents -- is the
+ * ReusableContent block added in Phase 2.
+ *
+ * PAYLOAD v3 vs v4: in v3 a blocks field takes `blockReferences: ['slug']` PLUS an empty
+ * `blocks: []` (required for compatibility). In v4 `blockReferences` is removed and the
+ * slugs go directly into `blocks`. Every use site carries this note.
+ */
+
+export const Hero: Block = {
+  slug: 'hero',
+  interfaceName: 'HeroBlock',
+  labels: { singular: 'Hero', plural: 'Heroes' },
+  fields: [
+    { name: 'heading', type: 'text', required: true },
+    { name: 'subheading', type: 'textarea' },
+    { name: 'image', type: 'upload', relationTo: 'media' },
+    {
+      name: 'alignment',
+      type: 'select',
+      defaultValue: 'left',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+      ],
+    },
+  ],
+}
+
+export const RichText: Block = {
+  slug: 'richText',
+  interfaceName: 'RichTextBlock',
+  labels: { singular: 'Rich Text', plural: 'Rich Text' },
+  fields: [{ name: 'content', type: 'richText', required: true }],
+}
+
+export const MediaBlock: Block = {
+  slug: 'mediaBlock',
+  interfaceName: 'MediaBlockType',
+  labels: { singular: 'Media', plural: 'Media' },
+  fields: [
+    { name: 'media', type: 'upload', relationTo: 'media', required: true },
+    { name: 'caption', type: 'text' },
+  ],
+}
+
+export const Cta: Block = {
+  slug: 'cta',
+  interfaceName: 'CtaBlock',
+  labels: { singular: 'Call to Action', plural: 'Calls to Action' },
+  fields: [
+    { name: 'heading', type: 'text', required: true },
+    { name: 'body', type: 'textarea' },
+    { name: 'label', type: 'text', required: true, label: 'Button label' },
+    { name: 'href', type: 'text', required: true, label: 'Button URL' },
+  ],
+}
+
+/** Everything registered at config root. */
+export const contentBlocks: Block[] = [Hero, RichText, MediaBlock, Cta]
+
+/**
+ * The slugs, for `blockReferences`. Typed as BlockSlug[] rather than derived with
+ * `.map(b => b.slug)` -- that widens to string[], which `blockReferences` rejects, because
+ * Payload types it against the generated `Config['blocks']` keys. Keep in step with
+ * `contentBlocks` above; the assertion below fails the typecheck if they diverge.
+ */
+export const contentBlockSlugs = ['hero', 'richText', 'mediaBlock', 'cta'] satisfies BlockSlug[]
+
+// Compile-time guard: every registered block must appear in contentBlockSlugs.
+const _slugCoverage: Record<(typeof contentBlocks)[number]['slug'], true> = Object.fromEntries(
+  contentBlockSlugs.map((s) => [s, true]),
+) as Record<(typeof contentBlocks)[number]['slug'], true>
+void _slugCoverage

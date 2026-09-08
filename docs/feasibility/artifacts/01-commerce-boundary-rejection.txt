@@ -1,0 +1,3 @@
+$ curl -X POST /api/product-content -d {"medusaProductId":"x","marketingName":"Nope","price":499,"stock":10,"name":"Canonical"}
+
+{"errors":[{"message":"Commerce data must not be stored in Payload. Medusa owns these fields: price, stock, name. Payload holds editorial content keyed by medusaProductId only."}]}

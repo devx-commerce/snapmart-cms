@@ -4,6 +4,9 @@ import config from '../../src/payload.config.js'
 export const testUser = {
   email: 'dev@payloadcms.com',
   password: 'test',
+  // Users.role is required (the six SoW admin roles), so the seed must supply it --
+  // without it TS cannot match payload.create's non-draft overload.
+  role: 'contentManager' as const,
 }
 
 /**
