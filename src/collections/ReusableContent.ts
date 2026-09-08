@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
-
 import { authenticated, authenticatedOrPublished } from '../access'
 import { contentBlockSlugs } from '../blocks'
+import { notifyCacheInvalidation } from '../hooks/notifyCacheInvalidation'
 
 /**
  * A piece of content authored ONCE and referenced from many documents, in any collection.
@@ -27,6 +27,9 @@ export const ReusableContent: CollectionConfig = {
     create: authenticated,
     update: authenticated,
     delete: authenticated,
+  },
+  hooks: {
+    afterChange: [notifyCacheInvalidation('reusable-content')],
   },
   versions: { drafts: true, maxPerDoc: 20 },
   fields: [

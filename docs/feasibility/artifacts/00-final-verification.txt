@@ -1,0 +1,24 @@
+############ FINAL VERIFICATION ############
+2026-09-08T09:36:54Z  payload 3.88.0 / next 16.3.3 / postgres 17
+
+--- toolchain ---
+  biome lint                  exit=0
+  typecheck                   exit=0
+  generate:types              exit=0
+
+--- services ---
+  payload /api/access         HTTP 200
+  graphql playground          HTTP 200
+  bff endpoint                HTTP 200
+  cdn asset (minio stands in) HTTP 200
+  postgres tables             59
+
+--- the four demos (each re-runnable) ---
+  reusable-content live-link  exit=0
+  copy-on-write divergence    exit=0
+  page templates              exit=0
+  extra slot + copy-on-create exit=0
+
+--- commerce boundary ---
+  POST with price/stock/name  HTTP 400 (rejected)
+  POST without them           HTTP 201 (accepted)

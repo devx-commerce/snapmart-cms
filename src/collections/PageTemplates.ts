@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
-
 import { authenticated, authenticatedOrPublished } from '../access'
 import { templateBlockSlugs } from '../blocks'
+import { notifyCacheInvalidation } from '../hooks/notifyCacheInvalidation'
 
 /**
  * A named layout applied to a whole *kind* of document.
@@ -31,6 +31,9 @@ export const PageTemplates: CollectionConfig = {
     create: authenticated,
     update: authenticated,
     delete: authenticated,
+  },
+  hooks: {
+    afterChange: [notifyCacheInvalidation('page-templates')],
   },
   versions: { drafts: true, maxPerDoc: 20 },
   fields: [

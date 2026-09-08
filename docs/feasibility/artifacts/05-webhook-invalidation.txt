@@ -1,0 +1,16 @@
+=== webhook receiver, after transitive resolution ===
+
+event   : reusable-content.update | changed: reusable-content/3
+affected: 2 document(s)
+   - reusable-content/3       
+   - pages/4                  about-landers
+
+event   : page-templates.update | changed: page-templates/3
+affected: 3 document(s)
+   - page-templates/3         
+   - product-content/8        prod_01JOLIVEOIL500
+   - product-content/7        prod_01JCOLDBREW1L
+
+event   : product-content.update | changed: product-content/7
+affected: 1 document(s)
+   - product-content/7        prod_01JCOLDBREW1L

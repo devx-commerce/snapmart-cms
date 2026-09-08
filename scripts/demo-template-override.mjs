@@ -58,6 +58,12 @@ for (const id of [coldBrew.id, oliveOil.id]) {
 console.log('=== (b) COPY-ON-CREATE — the template seeds a new page, then lets go ===\n')
 const campaign = (await get('/page-templates?depth=0&where[strategy][equals]=copyOnCreate')).docs[0]
 
+// Idempotent: this script is meant to be re-runnable, and `slug` is unique.
+await fetch(`${API}/pages?where[slug][equals]=holiday-campaign`, {
+  method: 'DELETE',
+  headers: auth(token),
+})
+
 const created = await (
   await fetch(`${API}/pages`, {
     method: 'POST',

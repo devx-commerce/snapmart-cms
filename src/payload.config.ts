@@ -15,7 +15,7 @@ import { ReusableContent } from './collections/ReusableContent'
 import { Users } from './collections/Users'
 import { bffProductContent } from './endpoints/bff'
 import { seedEndpoint } from './endpoints/seed'
-import { storagePlugin } from './plugins/storage'
+import { plugins } from './plugins'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -46,5 +46,5 @@ export default buildConfig({
   }),
   endpoints: [seedEndpoint, bffProductContent],
   sharp,
-  plugins: [storagePlugin],
+  plugins,
 })

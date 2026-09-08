@@ -1,67 +1,72 @@
-# Payload Blank Template
+# snapmart-cms
 
-This template comes configured with the bare minimum to get started on anything you need.
+PayloadCMS **feasibility POC** for the Snapmart Magento 2 → Medusa.js v2 migration.
 
-## Quick start
+This is not a CMS build. It is the smallest thing that can honestly answer six questions the
+Statement of Work leaves open, with running evidence rather than doc claims.
 
-This template can be deployed directly from our Cloud hosting and it will setup MongoDB and cloud S3 object storage for media.
+**→ Read [`docs/feasibility/REPORT.md`](docs/feasibility/REPORT.md) first.** It answers all
+six and lists the four decisions required before production.
+[`docs/feasibility/PROGRESS.md`](docs/feasibility/PROGRESS.md) is the phase-by-phase log.
 
-## Quick Start - local setup
+| Question | Answer |
+|---|---|
+| How is schema defined, and content authored per collection type? | [01-schema.md](docs/feasibility/01-schema.md) |
+| Reusing the same content across different collection types | [02-reusable-content.md](docs/feasibility/02-reusable-content.md) |
+| Page templates / layout inheritance (the PDP case) | [03-templates.md](docs/feasibility/03-templates.md) |
+| GraphQL playground, endpoints, and CDN for assets | [04-apis-and-cdn.md](docs/feasibility/04-apis-and-cdn.md) |
+| Plugins and third-party integrations | [05-plugins.md](docs/feasibility/05-plugins.md) |
 
-To spin up this template locally, follow these steps:
+## Running it
 
-### Clone
+```bash
+docker compose up -d    # postgres:17 on host 5433, minio + a public-read bucket
+cp .env.example .env    # then set PAYLOAD_SECRET
+pnpm install
+pnpm dev                # http://localhost:3000/admin — create the first user
+```
 
-After you click the `Deploy` button above, you'll want to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
+Then seed the fixtures and run the demos:
 
-### Development
+```bash
+TOKEN=$(curl -s -X POST localhost:3000/api/users/login -H 'Content-Type: application/json' \
+  -d '{"email":"you@example.com","password":"…"}' | jq -r .token)
+curl -X POST localhost:3000/api/seed -H "Authorization: JWT $TOKEN"
 
-1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `MONGODB_URL` from your Cloud project to your `.env` if you want to use S3 storage and the MongoDB database that was created for you.
+node scripts/demo-reusable-content.mjs      # one source, three consumers, no writes
+node scripts/demo-reusable-divergence.mjs   # copy-on-write divergence
+node scripts/demo-page-templates.mjs        # one template, two products, no writes
+node scripts/demo-template-override.mjs     # the extra slot, and copy-on-create
+```
 
-3. `pnpm install && pnpm dev` to install dependencies and start the dev server
-4. open `http://localhost:3000` to open the app in your browser
+`docker compose down -v` and repeat reproduces every result from an empty database.
 
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
+## Layout
 
-#### Docker (Optional)
+| Path | What |
+|---|---|
+| `src/blocks/` | the four content components, registered once at config root |
+| `src/blocks/ReusableContent/` | the shared-content-instance block + its copy-on-write UI field |
+| `src/collections/` | `Pages`, `ProductContent`, `ReusableContent`, `PageTemplates`, `Media`, `Users` |
+| `src/hooks/applyTemplate.ts` | both layout-inheritance strategies |
+| `src/hooks/rejectCommerceFields.ts` | the Medusa/Payload data boundary, enforced |
+| `src/hooks/notifyCacheInvalidation.ts` | outward webhook; resolves transitive dependents |
+| `src/plugins/` | S3/CDN storage, SEO, redirects |
+| `src/endpoints/bff.ts` | `GET /api/bff/product-content/:medusaProductId` |
+| `docs/feasibility/artifacts/` | raw captured output behind every claim |
 
-If you prefer to use Docker for local development instead of a local MongoDB instance, the provided docker-compose.yml file can be used.
+## The one rule this repo enforces in code
 
-To do so, follow these steps:
+From `snapmart-frontend/docs/glossary.md`:
 
-- Modify the `MONGODB_URL` in your `.env` file to `mongodb://127.0.0.1/<dbname>`
-- Modify the `docker-compose.yml` file's `MONGODB_URL` to match the above `<dbname>`
-- Run `docker-compose up` to start the database, optionally pass `-d` to run in the background.
+> Never render a price that came from Payload. Payload may hold a Medusa product ID; it must
+> not hold the product's name, price, or stock.
 
-## How it works
+A write to `product-content` carrying `price`, `stock` or `name` is rejected with HTTP 400.
+The editorial field is `marketingName`; there is no field called `name`.
 
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
+## Scope
 
-### Collections
-
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
-
-- #### Users (Authentication)
-
-  Users are auth-enabled collections that have access to the admin panel.
-
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/3.x/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
-
-- #### Media
-
-  This is the uploads enabled collection. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
-
-### Docker
-
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
-
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
-
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
-
-## Questions
-
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+**Not** a content model. The collections and blocks here are the minimum that answers the six
+questions. The SoW's "21+ content types" are never enumerated in it, so the real model still
+has to be designed. No Medusa, no BFF, no AWS, no IaC, no content migration, no localisation.

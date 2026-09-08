@@ -1,8 +1,8 @@
 import type { CollectionConfig } from 'payload'
-
 import { authenticated, authenticatedOrPublished } from '../access'
 import { layoutBlockSlugs } from '../blocks'
 import { copyTemplateOnCreate, resolveTemplateAtRead } from '../hooks/applyTemplate'
+import { notifyCacheInvalidation } from '../hooks/notifyCacheInvalidation'
 import { rejectCommerceFields } from '../hooks/rejectCommerceFields'
 
 /**
@@ -39,6 +39,7 @@ export const ProductContent: CollectionConfig = {
     // product's own blocks spliced into the slots. `productDetail` is never rewritten,
     // so a template edit changes every product without touching a single document.
     afterRead: [resolveTemplateAtRead('productDetail', 'resolvedDetail')],
+    afterChange: [notifyCacheInvalidation('product-content')],
   },
   versions: {
     drafts: { autosave: { interval: 375 } },

@@ -10,9 +10,14 @@ Updated at the end of every phase. Nothing is marked **Done** without its comman
 | 2 | Reusable content across collection types | ✅ Done | [02-reusable-content.md](02-reusable-content.md) · 1 source → 3 consumers in 2 collection types, consumers never written · copy-on-write verified in the panel |
 | 3 | Page templates / layout inheritance | ✅ Done | [03-templates.md](03-templates.md) · 2 products store 1 block, render 4 · template edit reached both, neither written |
 | 4 | GraphQL, REST, and CDN-backed assets | ✅ Done | [04-apis-and-cdn.md](04-apis-and-cdn.md) · playground live · 4 objects served from the CDN host · drafts do not leak to anonymous |
-| 5 | Plugins, third-party integration, report | ⏳ In progress | — |
+| 5 | Plugins, third-party integration, report | ✅ Done | [05-plugins.md](05-plugins.md) · [**REPORT.md**](REPORT.md) · seo + redirects working · webhook resolves transitive dependents |
 
 Status values: `⬜ Not started` · `⏳ In progress` · `✅ Done` · `⛔ Blocked`
+
+**All phases complete.** The consolidated answer to all six questions is in
+[**REPORT.md**](REPORT.md). Final verification sweep:
+[`artifacts/00-final-verification.txt`](artifacts/00-final-verification.txt) —
+lint 0, typecheck 0, four services up, four demos passing, commerce boundary holding.
 
 ---
 
@@ -298,3 +303,51 @@ API key.
 - No `Cache-Control` is set on upload; CDN behaviour falls back to bucket defaults.
 - The Local API is unavailable to the BFF (separate process), so every read is an HTTP hop
   — the argument for caching template-resolved responses at the BFF.
+
+---
+
+## Phase 5 — Plugins, third-party integration, and the report
+
+**Status:** ✅ Done → [05-plugins.md](05-plugins.md) · consolidated answers in [REPORT.md](REPORT.md)
+
+### Built
+`plugin-seo` and `plugin-redirects` installed against real SoW needs. A worked third-party
+integration: `src/hooks/notifyCacheInvalidation.ts`, an `afterChange` webhook that announces
+publishes outward — the same touch-point a CRM sync, analytics event or search reindex would
+use.
+
+### Proof
+- SEO meta populates and reads back over **both** REST and GraphQL.
+- A Magento URL (`/about-landers.html`) resolves by *reference* to `/about-landers`, so the
+  redirect survives a slug change.
+- The webhook announces **dependents, not just the changed row**: editing the shared
+  membership panel named 4 documents; editing the PDP template named 3; editing an ordinary
+  product named 1.
+- Full sweep: lint 0 · typecheck 0 · all four demos exit 0 · boundary write rejected 400,
+  clean write accepted 201.
+
+### Findings
+1. **Installing a plugin is a schema change.** `plugin-redirects` +2 tables, `plugin-seo`
+   +3 columns per collection (57 → 59). On Aurora every plugin addition is a migration.
+2. **The dependency is transitive and the obvious query is wrong.** A product reaches the
+   membership panel *through its template*, not directly. The first implementation reported
+   **1 affected document where 3 were stale** — worse than reporting nothing, because it
+   looks like it worked. The fix walks `reusable-content → templates → documents`.
+3. **`plugin-search` is a naming trap** — it indexes Payload content; the SoW's product
+   search is MeiliSearch/Algolia fed from Medusa.
+4. **Turbopack does not reliably hot-reload Payload hook modules.** A correct fix returned
+   stale results through several edit cycles until `rm -rf .next` and a restart. Restart
+   before concluding your hook is wrong.
+
+### Deliberately not installed
+`plugin-ecommerce` / `plugin-stripe` (would violate the ownership matrix — Medusa owns
+commerce), `plugin-multi-tenant` (single market), `plugin-search` (see above);
+`plugin-form-builder`, `plugin-nested-docs`, `plugin-sentry`, `plugin-import-export` are
+real later needs but not POC needs.
+
+### Open questions raised
+- Webhook delivery is fire-and-forget; a dropped call is silent staleness. Needs a retry
+  queue and an idempotent receiver.
+- `limit: 500` on the dependency queries — a panel used by more than 500 documents is
+  silently under-reported.
+- No body signing, only a shared-secret header.

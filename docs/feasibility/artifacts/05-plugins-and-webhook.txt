@@ -1,0 +1,30 @@
+=== 1. cache-invalidation webhook: who must be purged when shared content changes ===
+
+event   : reusable-content.update | changed: reusable-content/3
+affected: 4 document(s)
+   - reusable-content/3         
+   - pages/4                    about-landers
+   - product-content/8          prod_01JOLIVEOIL500
+   - product-content/7          prod_01JCOLDBREW1L
+
+event   : page-templates.update | changed: page-templates/3
+affected: 3 document(s)
+   - page-templates/3           
+   - product-content/8          prod_01JOLIVEOIL500
+   - product-content/7          prod_01JCOLDBREW1L
+
+event   : product-content.update | changed: product-content/7
+affected: 1 document(s)
+   - product-content/7          prod_01JCOLDBREW1L
+
+
+=== 2. plugin-seo: fields added, and they populate ===
+   meta.title      : Landers Signature Cold Brew 1L | Landers Superstore
+   meta.description: Smooth, low-acid cold brew in a resealable 1L bottle.
+   over GraphQL:
+   {"meta":{"title":"Landers Signature Cold Brew 1L | Landers Superstore","description":"Smooth, low-acid cold brew in a resealable 1L bottle."}}
+
+=== 3. plugin-redirects: a Magento URL mapped to the new one ===
+   created redirect 1 : /about-landers.html -> reference "about-landers"
+   lookup as the storefront would:
+   /about-landers.html  ->  /about-landers
