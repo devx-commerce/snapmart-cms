@@ -43,7 +43,9 @@ const showProducts = async (label) => {
     console.log(`\n  ${d.medusaProductId}   (updatedAt ${d.updatedAt})`)
     console.log(`    stored productDetail : ${d.productDetail.length} block(s) — the product's own`)
     console.log(`    resolvedDetail       : ${d.resolvedDetail.length} block(s) — template + own`)
-    d.resolvedDetail.forEach((b, i) => console.log(`      ${i + 1}. ${describe(b)}`))
+    d.resolvedDetail.forEach((b, i) => {
+      console.log(`      ${i + 1}. ${describe(b)}`)
+    })
   }
   return docs
 }
