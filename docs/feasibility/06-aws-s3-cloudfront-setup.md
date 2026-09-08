@@ -17,6 +17,102 @@ secret.
 If a key has already been pasted somewhere shared, **rotate it** rather than relying on the
 message being deleted.
 
+
+---
+
+## 0. Required tags
+
+Every resource created for this must carry all three:
+
+| Key | Value |
+|---|---|
+| `CreatedBy` | `Abhishek Kumbhani` |
+| `Department` | `Snapmart` |
+| `Environment` | `POC` |
+
+That means the **bucket**, the **IAM policy**, the **IAM user**, and the **CloudFront
+distribution** — not just the bucket.
+
+**One thing that trips people up:** S3's `CreateBucket` API takes no tags. Tagging a bucket is
+always a *second* call (`PutBucketTagging`). The console hides this by making both calls for
+you, but if a policy in your org denies untagged creation at the `CreateBucket` step itself,
+no amount of clicking will satisfy it — S3 simply cannot carry tags on that call. If creation
+is denied, that is the likely reason, and it needs the policy owner rather than a workaround.
+
+---
+
+## Path 1 — Script it (recommended: tags cannot be forgotten)
+
+```bash
+aws login                        # or however you authenticate
+./scripts/provision-s3.sh
+```
+
+Creates the bucket and IAM user, tags all three resources, blocks public access, turns on
+default encryption, and **writes the credentials straight into `.env`** — the secret is never
+printed, so it does not land in scrollback, tmux history, or a screen share.
+
+Re-runnable: every step checks for an existing resource first. Override with
+`AWS_REGION=… BUCKET_PREFIX=… ./scripts/provision-s3.sh`.
+
+It deliberately does **not** create CloudFront — that part is genuinely easier in the console,
+which generates and applies the OAC bucket policy for you.
+
+---
+
+## Path 2 — Console, step by step
+
+### A. The bucket
+
+1. **S3 → Create bucket**
+2. **Bucket name:** must be globally unique across all of AWS. Suggest
+   `snapmart-cms-media-poc-<your-account-id>`.
+3. **Region:** `ap-southeast-1` (Singapore) — nearest to landers.ph.
+4. **Object Ownership:** leave **ACLs disabled**. The storage adapter is configured to set no
+   ACL precisely so this default works.
+5. **Block Public Access:** leave **all four boxes ticked**. CloudFront will be granted read
+   access via OAC; the bucket itself stays private.
+6. **Default encryption:** SSE-S3 is fine.
+7. **Tags:** add all three from §0. ← *easy to skip; this is the screen where they go*
+8. Create.
+
+### B. The IAM policy
+
+1. **IAM → Policies → Create policy → JSON**
+2. Paste the policy from §1 below, replacing the bucket name in both ARNs.
+3. **Name:** `SnapmartCmsMediaPoc`
+4. **Tags:** all three.
+5. Create.
+
+⚠️ The two statements use **different ARN shapes** — object actions end in `/*`, the bucket
+action does not. Getting this wrong gives you a working upload alongside a failing bucket
+check, which is a confusing place to start debugging.
+
+### C. The IAM user and key
+
+1. **IAM → Users → Create user**, name `snapmart-cms-poc`.
+2. **Do not** give it console access — it is a service identity.
+3. **Permissions → Attach policies directly →** select `SnapmartCmsMediaPoc`.
+4. **Tags:** all three.
+5. Create, then open the user → **Security credentials → Create access key**.
+6. Use case: **Application running outside AWS**.
+7. **Copy both values straight into `.env`.** The secret is shown once and never again.
+
+### D. CloudFront
+
+1. **CloudFront → Create distribution**
+2. **Origin domain:** pick your bucket from the dropdown. Take the **S3 REST endpoint**
+   (`<bucket>.s3.<region>.amazonaws.com`), not the website endpoint.
+3. **Origin access:** **Origin access control (OAC)** → Create new OAC → accept the defaults.
+4. CloudFront shows a banner offering the generated bucket policy — **copy it and apply it to
+   the bucket** (S3 → your bucket → Permissions → Bucket policy). Without this step every
+   request returns 403.
+5. **Viewer protocol policy:** Redirect HTTP to HTTPS.
+6. **Tags:** all three.
+7. Create, then wait for **Deploying** to finish — 5–10 minutes. A 404 before then is normal.
+8. Copy the **Distribution domain name** (`dxxxxxxxxxxxxx.cloudfront.net`) into `.env` as
+   `CDN_BASE_URL`, with `https://` and **no trailing slash**.
+
 ---
 
 ## 1. What to provision
