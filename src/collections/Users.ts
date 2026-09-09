@@ -17,6 +17,7 @@ export const Users: CollectionConfig = {
   auth: {
     // Phase 4 compares this against public read access for the BFF's own calls.
     useAPIKey: true,
+    tokenExpiration: 60 * 60 * 24 * 30, // 30 days
   },
   access: {
     read: authenticated,
