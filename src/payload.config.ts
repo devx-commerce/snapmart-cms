@@ -47,4 +47,7 @@ export default buildConfig({
   endpoints: [seedEndpoint, bffProductContent],
   sharp,
   plugins,
+  jobs: {
+    autoRun: [{ cron: '* * * * *' }], // Payload's own default: check every minute
+  },
 })

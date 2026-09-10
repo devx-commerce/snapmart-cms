@@ -31,7 +31,7 @@ export const ReusableContent: CollectionConfig = {
   hooks: {
     afterChange: [notifyCacheInvalidation('reusable-content')],
   },
-  versions: { drafts: true, maxPerDoc: 20 },
+  versions: { drafts: { schedulePublish: true }, maxPerDoc: 20 },
   fields: [
     { name: 'title', type: 'text', required: true },
     {

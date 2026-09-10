@@ -31,7 +31,7 @@ export const Pages: CollectionConfig = {
     afterChange: [notifyCacheInvalidation('pages')],
   },
   versions: {
-    drafts: { autosave: { interval: 375 } },
+    drafts: { autosave: { interval: 375 }, schedulePublish: true },
     maxPerDoc: 20,
   },
   fields: [

@@ -42,7 +42,7 @@ export const ProductContent: CollectionConfig = {
     afterChange: [notifyCacheInvalidation('product-content')],
   },
   versions: {
-    drafts: { autosave: { interval: 375 } },
+    drafts: { autosave: { interval: 375 }, schedulePublish: true },
     maxPerDoc: 20,
   },
   fields: [

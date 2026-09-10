@@ -35,7 +35,7 @@ export const PageTemplates: CollectionConfig = {
   hooks: {
     afterChange: [notifyCacheInvalidation('page-templates')],
   },
-  versions: { drafts: true, maxPerDoc: 20 },
+  versions: { drafts: { schedulePublish: true }, maxPerDoc: 20 },
   fields: [
     { name: 'name', type: 'text', required: true },
     {
